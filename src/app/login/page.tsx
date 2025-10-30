@@ -7,6 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LogInIcon } from 'lucide-react';
+import { useAuth } from '@/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
 
 function LoginButton() {
     const { pending } = useFormStatus();
@@ -19,8 +24,36 @@ function LoginButton() {
 }
 
 export default function LoginPage() {
-    const initialState: LoginState = { message: null, errors: {} };
-    const [state, dispatch] = useFormState(authenticate, initialState);
+    const auth = useAuth();
+    const router = useRouter();
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        const email = formData.get('email') as string;
+        const password = formData.get('password') as string;
+
+        if (email === 'decolivecassino@gmail.com' && password === 'SorteioDecoLive') {
+             try {
+                await signInWithEmailAndPassword(auth, email, password);
+                router.push('/dashboard');
+            } catch (error: any) {
+                 if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                    setErrorMessage('E-mail ou senha inválidos.');
+                } else if (error.code === 'auth/invalid-credential') {
+                    setErrorMessage('E-mail ou senha inválidos.');
+                }
+                else {
+                    setErrorMessage('Ocorreu um erro. Tente novamente.');
+                }
+                console.error(error);
+            }
+        } else if (email && password) {
+            setErrorMessage('E-mail ou senha inválidos.');
+        }
+
+    };
 
     return (
         <div className="w-full min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
@@ -30,21 +63,19 @@ export default function LoginPage() {
                     <CardDescription>Faça login para gerenciar os participantes.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form action={dispatch} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
                             <Input id="email" name="email" type="email" placeholder="decolivecassino@gmail.com" required />
-                            {state.errors?.email && <p className="text-sm text-destructive">{state.errors.email}</p>}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="password">Senha</Label>
                             <Input id="password" name="password" type="password" placeholder="senha" required />
-                             {state.errors?.password && <p className="text-sm text-destructive">{state.errors.password}</p>}
                         </div>
-                        {state.message && (
+                        {errorMessage && (
                             <div className="flex items-center space-x-2 text-sm text-destructive">
                                 <LogInIcon className="h-4 w-4" />
-                                <p>{state.message}</p>
+                                <p>{errorMessage}</p>
                             </div>
                         )}
                         <LoginButton />

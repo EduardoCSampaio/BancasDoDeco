@@ -6,6 +6,8 @@ import { addUser, clearUsers, incrementRaffles, addWinner } from './data';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import type { User } from './definitions';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from './firebase-admin';
 
 const RegistrationSchema = z.object({
   name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres.' }),
@@ -48,6 +50,7 @@ export async function registerUser(prevState: RegistrationState, formData: FormD
       success: true,
     };
   } catch (error) {
+    console.error('Database Error:', error);
     return {
       message: 'Erro no banco de dados: Falha ao registrar usuário.',
       success: false,
@@ -80,13 +83,9 @@ export async function authenticate(prevState: LoginState, formData: FormData) {
   }
   
   const { email, password } = validatedFields.data;
-
-  // Em um aplicativo real, você procuraria o usuário no banco de dados
-  // e verificaria a senha. Usaremos valores fixos para este exemplo.
+  
   if (email === 'decolivecassino@gmail.com' && password === 'SorteioDecoLive') {
-    // Aqui você normalmente criaria uma sessão e definiria um cookie.
-    // Para este exemplo, apenas redirecionaremos.
-    redirect('/dashboard');
+      redirect('/dashboard');
   }
 
   return {
@@ -102,6 +101,7 @@ export async function resetEntries() {
     revalidatePath('/dashboard/roulette');
     return { success: true, message: 'As inscrições foram resetadas.' };
   } catch (error) {
+    console.error('Failed to reset entries:', error);
     return { success: false, message: 'Falha ao resetar as inscrições.' };
   }
 }
