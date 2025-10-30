@@ -6,8 +6,6 @@ import { addUser, clearUsers, incrementRaffles, addWinner } from './data';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import type { User } from './definitions';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from './firebase-admin';
 
 const RegistrationSchema = z.object({
   name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres.' }),
@@ -70,26 +68,29 @@ export type LoginState = {
         password?: string[];
     };
     message?: string | null;
+    success?: boolean;
 };
 
-export async function authenticate(prevState: LoginState, formData: FormData) {
+export async function authenticate(prevState: LoginState | undefined, formData: FormData): Promise<LoginState> {
   const validatedFields = LoginSchema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
       message: 'Campos inválidos.',
+      success: false,
     };
   }
   
   const { email, password } = validatedFields.data;
   
   if (email === 'decolivecassino@gmail.com' && password === 'SorteioDecoLive') {
-      redirect('/dashboard');
+      return { success: true, message: 'Login bem sucedido' };
   }
 
   return {
     message: 'E-mail ou senha inválidos.',
+    success: false,
   };
 }
 
