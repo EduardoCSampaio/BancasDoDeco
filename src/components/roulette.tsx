@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -7,6 +8,7 @@ import { handleNewWinner } from '@/lib/actions';
 import type { User } from '@/lib/definitions';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@/hooks/use-window-size';
+import { useFirestore } from '@/firebase';
 
 
 const colors = [
@@ -30,13 +32,14 @@ export function Roulette({ participants }: { participants: User[] }) {
   const [winner, setWinner] = useState<User | null>(null);
   const [rotation, setRotation] = useState(0);
   const { width, height } = useWindowSize();
+  const firestore = useFirestore();
 
   const participantNames = participants.map((p) => p.name);
   const segmentAngle = participants.length > 0 ? 360 / participants.length : 360;
   const spinDuration = 10000; // Slower spin: 10 seconds
 
   const spin = () => {
-    if (spinning || participants.length === 0) return;
+    if (spinning || participants.length === 0 || !firestore) return;
 
     setWinner(null);
     setSpinning(true);
@@ -55,7 +58,7 @@ export function Roulette({ participants }: { participants: User[] }) {
     setTimeout(() => {
       setWinner(selectedWinner);
       setSpinning(false);
-      handleNewWinner(selectedWinner);
+      handleNewWinner(firestore, selectedWinner);
     }, spinDuration);
   };
 

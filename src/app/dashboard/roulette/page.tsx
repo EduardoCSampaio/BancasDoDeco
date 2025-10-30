@@ -2,7 +2,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getRouletteData } from '@/lib/actions';
+import { useFirestore } from '@/firebase';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { Roulette } from '@/components/roulette';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Ticket, Trophy } from 'lucide-react';
@@ -22,27 +23,36 @@ function RouletteSkeleton() {
     )
 }
 
-// Helper to convert ISO string back to Date object
-function parseUsers(users: any[]): User[] {
-    return users.map(u => ({ ...u, createdAt: new Date(u.createdAt) }));
-}
-
-
 export default function RoulettePage() {
     const [users, setUsers] = useState<User[]>([]);
     const [totalRaffles, setTotalRaffles] = useState(0);
     const [loading, setLoading] = useState(true);
+    const firestore = useFirestore();
 
     const prizeImage = PlaceHolderImages.find(p => p.id === 'prize-image');
 
     useEffect(() => {
+        if (!firestore) return;
+
         async function fetchData() {
             setLoading(true);
             try {
-                // Call the server action
-                const { users, totalRaffles } = await getRouletteData();
-                setUsers(parseUsers(users));
-                setTotalRaffles(totalRaffles);
+                // Get Users
+                const usersCol = collection(firestore, 'registered_users');
+                const usersSnapshot = await getDocs(usersCol);
+                const usersData = usersSnapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                    createdAt: doc.data().createdAt.toDate(),
+                } as User));
+                setUsers(usersData);
+
+                // Get Stats
+                const statsDocRef = doc(firestore, 'stats', 'raffle');
+                const docSnap = await getDoc(statsDocRef);
+                const totalRafflesData = docSnap.exists() ? (docSnap.data()?.totalRaffles || 0) : 0;
+                setTotalRaffles(totalRafflesData);
+
             } catch (error) {
                 console.error("Failed to fetch roulette data:", error);
             } finally {
@@ -50,7 +60,7 @@ export default function RoulettePage() {
             }
         }
         fetchData();
-    }, []);
+    }, [firestore]);
 
     return (
         <div className="flex justify-center">
@@ -90,4 +100,3 @@ export default function RoulettePage() {
         </div>
     );
 }
-

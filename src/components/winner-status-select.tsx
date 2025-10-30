@@ -13,13 +13,19 @@ import { useToast } from '@/hooks/use-toast';
 import type { Winner } from '@/lib/definitions';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
+import { useFirestore } from '@/firebase';
 
 
 export function WinnerStatusSelect({ winner }: { winner: Winner }) {
     const { toast } = useToast();
+    const firestore = useFirestore();
 
     const handleStatusChange = async (newStatus: 'Pendente' | 'Pix Enviado') => {
-        const result = await updateWinnerStatusAction(winner.id, newStatus);
+        if (!firestore) {
+            toast({ title: 'Erro', description: 'Firestore não está disponível.', variant: 'destructive' });
+            return;
+        }
+        const result = await updateWinnerStatusAction(firestore, winner.id, newStatus);
         if (result.success) {
             toast({
                 title: 'Status Atualizado',

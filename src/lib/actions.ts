@@ -3,10 +3,18 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import type { User, Winner } from './definitions';
-import { getFirestore, doc, updateDoc, collection, getDocs, query, orderBy, getDoc, runTransaction, addDoc, writeBatch } from 'firebase/firestore';
-import { db } from '@/firebase/config-for-actions';
-
+import type { User } from './definitions';
+import {
+  getFirestore,
+  doc,
+  updateDoc,
+  collection,
+  writeBatch,
+  runTransaction,
+  addDoc,
+  getDocs,
+} from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase'; // Using client-side init, fine for revalidate.
 
 const RegistrationSchema = z.object({
   name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres.' }),
@@ -43,8 +51,8 @@ export async function registerUser(prevState: RegistrationState, formData: FormD
         success: false,
         };
     }
-    
-    // Apenas validação aqui. A escrita será feita no cliente.
+
+    // Since write is on client, we just revalidate and return success
     revalidatePath('/dashboard');
     return {
         message: 'Validação bem-sucedida!',
@@ -81,8 +89,9 @@ export async function authenticate(prevState: LoginState | undefined, formData: 
   
   const { email, password } = validatedFields.data;
 
-  // This is a simplified check. In a real app, use Firebase Auth client-side SDK.
+  // This is a simplified check.
   if (email === 'decolivecassino@gmail.com' && password === 'Banca@123') {
+     revalidatePath('/dashboard');
      return { success: true, message: 'Login bem sucedido' };
   }
   
@@ -90,7 +99,7 @@ export async function authenticate(prevState: LoginState | undefined, formData: 
 }
 
 
-export async function resetEntries() {
+export async function resetEntries(db: any) { // db will be passed from client
   try {
     const usersCol = collection(db, 'registered_users');
     const querySnapshot = await getDocs(usersCol);
@@ -113,7 +122,7 @@ export async function resetEntries() {
   }
 }
 
-export async function handleNewWinner(winner: User) {
+export async function handleNewWinner(db: any, winner: User) { // db will be passed from client
     try {
         const statsDocRef = doc(db, 'stats', 'raffle');
         await runTransaction(db, async (transaction) => {
@@ -140,7 +149,7 @@ export async function handleNewWinner(winner: User) {
     }
 }
 
-export async function updateWinnerStatusAction(id: string, status: 'Pendente' | 'Pix Enviado') {
+export async function updateWinnerStatusAction(db: any, id: string, status: 'Pendente' | 'Pix Enviado') { // db will be passed from client
   try {
     const winnerRef = doc(db, 'winners', id);
     await updateDoc(winnerRef, { status });
@@ -150,29 +159,4 @@ export async function updateWinnerStatusAction(id: string, status: 'Pendente' | 
     console.error('Failed to update winner status:', error);
     return { success: false, message: 'Falha ao atualizar o status.' };
   }
-}
-
-export async function getRouletteData() {
-    // Get Users
-    const usersCol = collection(db, 'registered_users');
-    const usersQuery = query(usersCol, orderBy('createdAt', 'desc'));
-    const usersSnapshot = await getDocs(usersQuery);
-    const users = usersSnapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-            id: doc.id,
-            name: data.name,
-            cpf: data.cpf,
-            casinoId: data.casinoId,
-            // Firestore timestamps need to be converted to be serializable
-            createdAt: data.createdAt.toDate().toISOString(),
-        } as User;
-    });
-
-    // Get Stats
-    const statsDocRef = doc(db, 'stats', 'raffle');
-    const docSnap = await getDoc(statsDocRef);
-    const totalRaffles = docSnap.exists() ? (docSnap.data()?.totalRaffles || 0) : 0;
-    
-    return { users, totalRaffles };
 }

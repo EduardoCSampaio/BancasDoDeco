@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useFormStatus } from 'react-dom';
@@ -16,6 +17,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Trash2 } from 'lucide-react';
+import { useFirestore } from '@/firebase';
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -35,9 +37,14 @@ function SubmitButton() {
 
 export function ResetButton() {
     const { toast } = useToast();
+    const firestore = useFirestore();
 
     const handleReset = async () => {
-        const result = await resetEntries();
+        if (!firestore) {
+            toast({ title: 'Erro', description: 'Firestore não está disponível.', variant: 'destructive' });
+            return;
+        }
+        const result = await resetEntries(firestore);
         if (result.success) {
             toast({
                 title: 'Sucesso!',
@@ -69,10 +76,11 @@ export function ResetButton() {
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <form action={handleReset} className="flex gap-2">
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <SubmitButton />
-                    </form>
+                    {/* The form isn't ideal here anymore but good enough for now */}
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <Button onClick={handleReset} variant="destructive">
+                        Sim, Resetar
+                    </Button>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
