@@ -1,8 +1,8 @@
 export const firebaseConfig = {
   "projectId": "bancasdodeco",
-  "appId": "1:380482596956:web:62332158cd272186835261",
+  "appId": "1:380482596956:web:d87654f593b137f8835261",
   "storageBucket": "bancasdodeco.appspot.com",
-  "apiKey": "AIzaSyAz_vAGBTo2NmM37j5A5Wgy43aA8t4PGI8",
+  "apiKey": "AIzaSyCV36UT3s5v3yv7-W_82K48f3uprx3g6sM",
   "authDomain": "bancasdodeco.firebaseapp.com",
   "messagingSenderId": "380482596956"
 };
