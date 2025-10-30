@@ -8,8 +8,8 @@ import type { User } from './definitions';
 
 const RegistrationSchema = z.object({
   name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres.' }),
-  cpf: z.string().refine((cpf) => /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf), {
-    message: 'Formato de CPF inválido. Use XXX.XXX.XXX-XX.',
+  cpf: z.string().regex(/^\d{11}$/, {
+    message: 'CPF deve conter 11 dígitos.',
   }),
   casinoId: z.string().min(1, { message: 'ID da Conta Cassino é obrigatório.' }),
 });
@@ -25,9 +25,12 @@ export type RegistrationState = {
 };
 
 export async function registerUser(prevState: RegistrationState, formData: FormData) {
+  // Remove formatting from CPF
+  const rawCpf = (formData.get('cpf') as string || '').replace(/[.\-]/g, '');
+
   const validatedFields = RegistrationSchema.safeParse({
     name: formData.get('name'),
-    cpf: formData.get('cpf'),
+    cpf: rawCpf,
     casinoId: formData.get('casinoId'),
   });
 

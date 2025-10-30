@@ -20,12 +20,11 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { PartyPopperIcon } from 'lucide-react';
 
 const RegistrationSchema = z.object({
   name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres.' }),
-  cpf: z.string().refine((cpf) => /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf), {
-    message: 'Formato de CPF inválido. Use XXX.XXX.XXX-XX.',
+  cpf: z.string().regex(/^\d{11}$/, {
+    message: 'CPF deve conter 11 dígitos.',
   }),
   casinoId: z.string().min(1, { message: 'ID da Conta Cassino é obrigatório.' }),
 });
@@ -55,8 +54,27 @@ export function RegistrationForm() {
     },
   });
 
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 11);
+    form.setValue('cpf', value, { shouldValidate: true });
+    return value;
+  };
+  
   useEffect(() => {
-    if (!state.success && state.message) {
+    if (state.errors?.cpf) {
+        form.setError('cpf', { type: 'manual', message: state.errors.cpf[0] });
+    }
+    if (state.errors?.name) {
+        form.setError('name', { type: 'manual', message: state.errors.name[0] });
+    }
+    if (state.errors?.casinoId) {
+        form.setError('casinoId', { type: 'manual', message: state.errors.casinoId[0] });
+    }
+  }, [state.errors, form]);
+
+
+  useEffect(() => {
+    if (!state.success && state.message && !state.errors) {
         toast({
             title: 'Erro de Inscrição',
             description: state.message,
@@ -87,7 +105,7 @@ export function RegistrationForm() {
               <FormControl>
                 <Input placeholder="Seu nome completo" {...field} />
               </FormControl>
-              <FormMessage>{state.errors?.name}</FormMessage>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -96,11 +114,15 @@ export function RegistrationForm() {
           name="cpf"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>CPF</FormLabel>
+              <FormLabel>CPF (apenas números)</FormLabel>
               <FormControl>
-                <Input placeholder="000.000.000-00" {...field} />
+                <Input 
+                  placeholder="12345678900" 
+                  {...field} 
+                  onChange={(e) => field.onChange(handleCpfChange(e))}
+                />
               </FormControl>
-              <FormMessage>{state.errors?.cpf}</FormMessage>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -113,7 +135,7 @@ export function RegistrationForm() {
               <FormControl>
                 <Input placeholder="Seu ID de jogador" {...field} />
               </FormControl>
-              <FormMessage>{state.errors?.casinoId}</FormMessage>
+              <FormMessage />
             </FormItem>
           )}
         />
