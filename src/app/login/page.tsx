@@ -1,7 +1,5 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
-import { authenticate, type LoginState } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,9 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 
-function LoginButton() {
-    const { pending } = useFormStatus();
-
+function LoginButton({ pending }: { pending: boolean}) {
     return (
         <Button className="w-full" aria-disabled={pending} disabled={pending}>
             {pending ? "Entrando..." : "Entrar"}
@@ -27,32 +23,36 @@ export default function LoginPage() {
     const auth = useAuth();
     const router = useRouter();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [pending, setPending] = useState(false);
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        setPending(true);
+        setErrorMessage(null);
+
         const formData = new FormData(event.currentTarget);
         const email = formData.get('email') as string;
         const password = formData.get('password') as string;
 
-        if (email === 'decolivecassino@gmail.com' && password === 'SorteioDecoLive') {
-             try {
-                await signInWithEmailAndPassword(auth, email, password);
-                router.push('/dashboard');
-            } catch (error: any) {
-                 if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-                    setErrorMessage('E-mail ou senha inválidos.');
-                } else if (error.code === 'auth/invalid-credential') {
-                    setErrorMessage('E-mail ou senha inválidos.');
-                }
-                else {
-                    setErrorMessage('Ocorreu um erro. Tente novamente.');
-                }
-                console.error(error);
-            }
-        } else if (email && password) {
-            setErrorMessage('E-mail ou senha inválidos.');
+        if (!email || !password) {
+            setErrorMessage('Por favor, preencha o e-mail e a senha.');
+            setPending(false);
+            return;
         }
 
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            router.push('/dashboard');
+        } catch (error: any) {
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                setErrorMessage('E-mail ou senha inválidos.');
+            } else {
+                setErrorMessage('Ocorreu um erro ao tentar fazer login. Tente novamente.');
+                console.error(error);
+            }
+        } finally {
+            setPending(false);
+        }
     };
 
     return (
@@ -78,7 +78,7 @@ export default function LoginPage() {
                                 <p>{errorMessage}</p>
                             </div>
                         )}
-                        <LoginButton />
+                        <LoginButton pending={pending} />
                     </form>
                 </CardContent>
             </Card>
