@@ -5,8 +5,6 @@ import { z } from 'zod';
 import { addUser, clearUsers, incrementRaffles, addWinner, updateWinnerStatus } from './data';
 import { revalidatePath } from 'next/cache';
 import type { User } from './definitions';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from './firebase-admin';
 
 const RegistrationSchema = z.object({
   name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres.' }),
@@ -63,7 +61,7 @@ export async function registerUser(prevState: RegistrationState, formData: FormD
 
 const LoginSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um e-mail válido.' }),
-  password: z.string().min(6, { message: 'A senha deve ter pelo menos 6 caracteres.' }),
+  password: z.string().min(1, { message: 'A senha é obrigatória.' }),
 });
 
 export type LoginState = {
@@ -87,25 +85,13 @@ export async function authenticate(prevState: LoginState | undefined, formData: 
   }
   
   const { email, password } = validatedFields.data;
-  
-  try {
-     const userCredential = await auth.getUserByEmail(email);
-     // Note: This is not a direct password check. `firebase-admin` does not do that.
-     // For a real app, you'd use client-side SDK's signInWithEmailAndPassword, then send ID token to server to create a session cookie.
-     // For this app's purpose, just checking if admin email exists is enough to "log in" for the dashboard.
-     if (userCredential.email === 'decolivecassino@gmail.com') {
-        // This is a simplified "login" for the purpose of this app.
-        // A real app should implement proper session management.
-        return { success: true, message: 'Login bem sucedido' };
-     }
-    return { message: 'E-mail ou senha inválidos.', success: false };
-  } catch (error) {
-    console.error('Authentication error:', error);
-    if ((error as any).code === 'auth/user-not-found') {
-        return { message: 'E-mail ou senha inválidos.', success: false };
-    }
-    return { message: 'Ocorreu um erro durante a autenticação.', success: false };
+
+  // This is a simplified check. In a real app, use Firebase Auth client-side SDK.
+  if (email === 'decolivecassino@gmail.com' && password === 'Banca@123') {
+     return { success: true, message: 'Login bem sucedido' };
   }
+  
+  return { message: 'E-mail ou senha inválidos.', success: false };
 }
 
 

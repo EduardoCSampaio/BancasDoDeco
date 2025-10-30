@@ -2,9 +2,6 @@
 'use server';
 
 import { getFirestore } from 'firebase-admin/firestore';
-import { getAdminApp } from './firebase-admin';
-
-import type { User, Winner } from './definitions';
 import {
   collection,
   getDocs,
@@ -20,62 +17,68 @@ import {
 } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 
-// Collection references
-const db = getFirestore(getAdminApp());
-const usersCol = collection(db, 'registered_users');
-const winnersCol = collection(db, 'winners');
-const statsDoc = doc(db, 'stats', 'raffle');
+import type { User, Winner } from './definitions';
 
+// This function will now use the client-side SDK via initializeFirebase
 export async function getRaffleStats(): Promise<{ totalRaffles: number }> {
-  try {
-    const docSnap = await runTransaction(db, async (transaction) => {
-        const sfDoc = await transaction.get(statsDoc);
-        if (!sfDoc.exists()) {
-            return { totalRaffles: 0 };
-        }
-        return sfDoc.data() as { totalRaffles: number };
-    });
-    return docSnap;
-  } catch (e) {
-    console.error("Error getting raffle stats: ", e);
-    // Return a default value in case of error
-    return { totalRaffles: 0 };
-  }
+    const { firestore } = initializeFirebase();
+    const statsDocRef = doc(firestore, 'stats', 'raffle');
+    try {
+        const docSnap = await runTransaction(firestore, async (transaction) => {
+            const sfDoc = await transaction.get(statsDocRef);
+            if (!sfDoc.exists()) {
+                return { totalRaffles: 0 };
+            }
+            return sfDoc.data() as { totalRaffles: number };
+        });
+        return docSnap;
+    } catch (e) {
+        console.error("Error getting raffle stats: ", e);
+        return { totalRaffles: 0 };
+    }
 }
+
 
 export async function incrementRaffles(): Promise<void> {
-  try {
-    await runTransaction(db, async (transaction) => {
-      const sfDoc = await transaction.get(statsDoc);
-      if (!sfDoc.exists()) {
-        transaction.set(statsDoc, { totalRaffles: 1 });
-      } else {
-        const newTotal = (sfDoc.data().totalRaffles || 0) + 1;
-        transaction.update(statsDoc, { totalRaffles: newTotal });
-      }
-    });
-  } catch (e) {
-    console.error("Error incrementing raffles: ", e);
-  }
+    const { firestore } = initializeFirebase();
+    const statsDocRef = doc(firestore, 'stats', 'raffle');
+    try {
+        await runTransaction(firestore, async (transaction) => {
+            const sfDoc = await transaction.get(statsDocRef);
+            if (!sfDoc.exists()) {
+                transaction.set(statsDocRef, { totalRaffles: 1 });
+            } else {
+                const newTotal = (sfDoc.data().totalRaffles || 0) + 1;
+                transaction.update(statsDocRef, { totalRaffles: newTotal });
+            }
+        });
+    } catch (e) {
+        console.error("Error incrementing raffles: ", e);
+    }
 }
 
+
 export async function getUsers(): Promise<User[]> {
-  const q = query(usersCol, orderBy('createdAt', 'desc'));
-  const querySnapshot = await getDocs(q);
-  const users = querySnapshot.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      name: data.name,
-      cpf: data.cpf,
-      casinoId: data.casinoId,
-      createdAt: data.createdAt.toDate(),
-    };
-  });
-  return users;
+    const { firestore } = initializeFirebase();
+    const usersCol = collection(firestore, 'registered_users');
+    const q = query(usersCol, orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    const users = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            name: data.name,
+            cpf: data.cpf,
+            casinoId: data.casinoId,
+            createdAt: data.createdAt.toDate(),
+        } as User;
+    });
+    return users;
 }
 
 export async function addUser(data: { name: string; cpf: string; casinoId: string }): Promise<void> {
+    const { firestore } = initializeFirebase();
+    const usersCol = collection(firestore, 'registered_users');
     await addDoc(usersCol, {
         ...data,
         createdAt: serverTimestamp(),
@@ -83,15 +86,20 @@ export async function addUser(data: { name: string; cpf: string; casinoId: strin
 }
 
 export async function clearUsers(): Promise<void> {
+    const { firestore } = initializeFirebase();
+    const usersCol = collection(firestore, 'registered_users');
     const querySnapshot = await getDocs(usersCol);
-    const batch = writeBatch(db);
+    const batch = writeBatch(firestore);
     querySnapshot.forEach((doc) => {
         batch.delete(doc.ref);
     });
     await batch.commit();
 }
 
+
 export async function addWinner(user: User): Promise<void> {
+    const { firestore } = initializeFirebase();
+    const winnersCol = collection(firestore, 'winners');
     await addDoc(winnersCol, {
         ...user,
         wonAt: serverTimestamp(),
@@ -105,8 +113,9 @@ export async function updateWinnerStatus(id: string, status: 'Pendente' | 'Pix E
     await updateDoc(winnerRef, { status });
 }
 
-
 export async function getWinners(): Promise<Winner[]> {
+    const { firestore } = initializeFirebase();
+    const winnersCol = collection(firestore, 'winners');
     const q = query(winnersCol, orderBy('wonAt', 'desc'), limit(100));
     const querySnapshot = await getDocs(q);
     const winners = querySnapshot.docs.map((doc) => {
@@ -119,7 +128,7 @@ export async function getWinners(): Promise<Winner[]> {
             createdAt: data.createdAt.toDate(),
             wonAt: data.wonAt.toDate(),
             status: data.status || 'Pendente',
-        }
+        } as Winner;
     });
     return winners;
 }
