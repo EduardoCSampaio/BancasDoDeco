@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Users, Trophy, Gift } from 'lucide-react';
+import { Users, Trophy, Ticket } from 'lucide-react';
 
 const links = [
   { name: 'Participantes', href: '/dashboard', icon: Users },
-  { name: 'Roleta', href: '/dashboard/roulette', icon: Gift },
+  { name: 'Roleta', href: '/dashboard/roulette', icon: Ticket },
   { name: 'Ganhadores', href: '/dashboard/winners', icon: Trophy },
 ];
 
