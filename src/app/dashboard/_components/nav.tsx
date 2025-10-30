@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Users, RouletteWheelIcon, Trophy } from 'lucide-react';
+import { Users, Trophy } from 'lucide-react';
+import { RouletteWheelIcon } from '@/components/icons';
 
 const links = [
   { name: 'Participantes', href: '/dashboard', icon: Users },
