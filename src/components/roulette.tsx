@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { Crown } from 'lucide-react';
+import { incrementRaffleCount } from '@/lib/actions';
 
 export function Roulette({ participants }: { participants: string[] }) {
   const [spinning, setSpinning] = useState(false);
@@ -30,7 +31,8 @@ export function Roulette({ participants }: { participants: string[] }) {
     setTimeout(() => {
       setWinner(participants[winnerIndex]);
       setSpinning(false);
-    }, 6000); // Must match transition duration in CSS
+      incrementRaffleCount();
+    }, 6000); // Deve corresponder à duração da transição no CSS
   };
 
   return (
@@ -92,7 +94,7 @@ export function Roulette({ participants }: { participants: string[] }) {
         size="lg"
         className="w-64 bg-accent text-accent-foreground hover:bg-accent/90 text-xl font-bold py-8 rounded-full shadow-lg"
       >
-        {spinning ? 'Roletando...' : 'Roletar os Nomes'}
+        {spinning ? 'GIRANDO...' : 'GIRAR A ROLETA'}
       </Button>
     </div>
   );

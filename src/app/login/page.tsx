@@ -38,7 +38,7 @@ export default function LoginPage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="password">Senha</Label>
-                            <Input id="password" name="password" type="password" placeholder="password" required />
+                            <Input id="password" name="password" type="password" placeholder="senha" required />
                              {state.errors?.password && <p className="text-sm text-destructive">{state.errors.password}</p>}
                         </div>
                         {state.message && (

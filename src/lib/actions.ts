@@ -2,7 +2,7 @@
 'use server';
 
 import { z } from 'zod';
-import { addUser } from './data';
+import { addUser, clearUsers, incrementRaffles } from './data';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
@@ -80,15 +80,35 @@ export async function authenticate(prevState: LoginState, formData: FormData) {
   
   const { email, password } = validatedFields.data;
 
-  // In a real app, you'd look up the user in the database
-  // and check their password. We'll use hardcoded values for this example.
+  // Em um aplicativo real, você procuraria o usuário no banco de dados
+  // e verificaria a senha. Usaremos valores fixos para este exemplo.
   if (email === 'admin@example.com' && password === 'password') {
-    // Here you would typically create a session and set a cookie.
-    // For this example, we'll just redirect.
+    // Aqui você normalmente criaria uma sessão e definiria um cookie.
+    // Para este exemplo, apenas redirecionaremos.
     redirect('/dashboard');
   }
 
   return {
     message: 'E-mail ou senha inválidos.',
   };
+}
+
+
+export async function resetEntries() {
+  try {
+    await clearUsers();
+    revalidatePath('/dashboard');
+    return { success: true, message: 'As inscrições foram resetadas.' };
+  } catch (error) {
+    return { success: false, message: 'Falha ao resetar as inscrições.' };
+  }
+}
+
+export async function incrementRaffleCount() {
+    try {
+        await incrementRaffles();
+        revalidatePath('/dashboard');
+    } catch (error) {
+        console.error('Failed to increment raffle count:', error);
+    }
 }

@@ -51,12 +51,6 @@ export function RegistrationForm() {
       cpf: '',
       casinoId: '',
     },
-    // The useFormState error object is simpler to use directly
-    // errors: state.errors ? {
-    //   name: state.errors.name?.[0],
-    //   cpf: state.errors.cpf?.[0],
-    //   casinoId: state.errors.casinoId?.[0],
-    // } : {},
   });
 
   useEffect(() => {
@@ -87,7 +81,7 @@ export function RegistrationForm() {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nome</FormLabel>
+              <FormLabel>Nome Completo</FormLabel>
               <FormControl>
                 <Input placeholder="Seu nome completo" {...field} />
               </FormControl>
@@ -113,7 +107,7 @@ export function RegistrationForm() {
           name="casinoId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Id da Conta Cassino</FormLabel>
+              <FormLabel>ID da Conta Cassino</FormLabel>
               <FormControl>
                 <Input placeholder="Seu ID de jogador" {...field} />
               </FormControl>

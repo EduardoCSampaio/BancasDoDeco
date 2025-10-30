@@ -4,11 +4,10 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { ChipIcon } from '@/components/icons';
 import { Toaster } from '@/components/ui/toaster';
-import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
-  title: 'Jackpot Sign-Up',
-  description: 'User registration for our exclusive casino club.',
+  title: 'Inscrição Sorteio',
+  description: 'Cadastro de usuários para nosso clube exclusivo.',
 };
 
 export default function RootLayout({
@@ -17,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="pt-BR" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -38,19 +37,9 @@ export default function RootLayout({
               <Link href="/" className="mr-6 flex items-center space-x-2">
                 <ChipIcon className="h-8 w-8 text-primary" />
                 <span className="font-headline text-xl font-bold sm:inline-block">
-                  Jackpot Sign-Up
+                  Sorteio VIP
                 </span>
               </Link>
-              <div className="flex flex-1 items-center justify-end space-x-4">
-                <nav className="flex items-center space-x-2">
-                  <Button asChild variant="ghost">
-                    <Link href="/login">Admin Login</Link>
-                  </Button>
-                  <Button asChild>
-                    <Link href="/dashboard">Dashboard</Link>
-                  </Button>
-                </nav>
-              </div>
             </div>
           </header>
           <main className="flex-1">{children}</main>

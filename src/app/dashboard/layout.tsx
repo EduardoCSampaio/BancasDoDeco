@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Admin Dashboard',
-  description: 'Manage participants and pick winners.',
+  title: 'Painel do Admin',
+  description: 'Gerencie participantes e escolha os vencedores.',
 };
 
 export default function DashboardLayout({

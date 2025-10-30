@@ -10,8 +10,8 @@ export default function Home() {
           <div className="mx-auto bg-primary text-primary-foreground rounded-full p-3 w-fit mb-4 shadow-lg">
             <RouletteWheelIcon className="h-10 w-10" />
           </div>
-          <CardTitle className="font-headline text-4xl">Join The Club</CardTitle>
-          <CardDescription className="text-muted-foreground pt-2">Register now for exclusive access and rewards.</CardDescription>
+          <CardTitle className="font-headline text-4xl">Entre para o Clube</CardTitle>
+          <CardDescription className="text-muted-foreground pt-2">Cadastre-se agora para acesso exclusivo e prêmios.</CardDescription>
         </CardHeader>
         <CardContent>
           <RegistrationForm />

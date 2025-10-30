@@ -1,13 +1,16 @@
-import { getUsers } from '@/lib/data';
+import { getRaffleStats, getUsers } from '@/lib/data';
 import { Roulette } from '@/components/roulette';
 import { UserTable } from '@/components/user-table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RouletteWheelIcon } from '@/components/icons';
+import { ResetButton } from '@/components/reset-button';
+import { Trophy } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 export default async function DashboardPage() {
   const users = await getUsers();
+  const { totalRaffles } = await getRaffleStats();
   const userNames = users.map((user) => user.name);
 
   return (
@@ -29,6 +32,13 @@ export default async function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                     <Roulette participants={userNames} />
+                    <div className="mt-8 flex flex-col items-center gap-4">
+                      <ResetButton />
+                       <div className="flex items-center gap-2 text-lg font-semibold text-muted-foreground">
+                          <Trophy className="w-6 h-6 text-accent"/>
+                          <span>Sorteios Realizados: {totalRaffles}</span>
+                       </div>
+                    </div>
                 </CardContent>
             </Card>
         </div>
