@@ -15,14 +15,19 @@ export default async function DashboardPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <div className="grid gap-8 lg:grid-cols-5">
+      <div className="flex flex-col items-center justify-center text-center mb-12">
+          <h1 className="text-5xl font-bold font-headline text-primary">Painel do Sorteio</h1>
+          <p className="text-lg text-muted-foreground mt-2">Gerencie os participantes e realize os sorteios.</p>
+      </div>
+
+      <div className="grid gap-8 lg:grid-cols-5 lg:items-start">
         
         <div className="lg:col-span-3">
             <UserTable users={users} />
         </div>
 
         <div className="lg:col-span-2">
-            <Card className="shadow-lg border-primary/20 sticky top-20">
+            <Card className="shadow-lg border-primary/20 sticky top-8">
                 <CardHeader>
                     <div className="flex items-center gap-3">
                         <RouletteWheelIcon className="w-8 h-8 text-primary" />
@@ -35,7 +40,7 @@ export default async function DashboardPage() {
                     <div className="mt-8 flex flex-col items-center gap-4">
                       <ResetButton />
                        <div className="flex items-center gap-2 text-lg font-semibold text-muted-foreground">
-                          <Trophy className="w-6 h-6 text-accent"/>
+                          <Trophy className="w-6 h-6 text-yellow-400"/>
                           <span>Sorteios Realizados: {totalRaffles}</span>
                        </div>
                     </div>
