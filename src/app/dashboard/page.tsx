@@ -1,15 +1,62 @@
+'use client';
 
-import { getUsers } from '@/lib/data';
+import { useState, useEffect } from 'react';
+import { User } from '@/lib/definitions';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { UserTable } from '@/components/user-table';
 import { ResetButton } from '@/components/reset-button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Users } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-4">
+      <Skeleton className="h-10 w-1/3" />
+      <div className="rounded-md border">
+        <div className="h-96 w-full space-y-2 p-4">
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 
-export const dynamic = 'force-dynamic';
+export default function DashboardPage() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
 
-export default async function DashboardPage() {
-  const users = await getUsers();
+  useEffect(() => {
+    const usersCol = collection(db, 'registered_users');
+    const q = query(usersCol, orderBy('createdAt', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const usersData = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: data.name,
+          cpf: data.cpf,
+          casinoId: data.casinoId,
+          // Firestore Timestamps need to be converted to JS Dates
+          createdAt: data.createdAt?.toDate(), 
+        } as User;
+      });
+      setUsers(usersData.filter(u => u.createdAt)); // Filter out users where date conversion might fail
+      setLoading(false);
+    }, (error) => {
+        console.error("Error fetching users:", error);
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   return (
     <Card className="shadow-lg border-primary/20 bg-card/80 backdrop-blur-sm">
@@ -26,7 +73,7 @@ export default async function DashboardPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <UserTable users={users} />
+        {loading ? <DashboardSkeleton /> : <UserTable users={users} />}
       </CardContent>
     </Card>
   );
