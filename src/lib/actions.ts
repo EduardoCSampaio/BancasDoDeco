@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { addUser, clearUsers, incrementRaffles, addWinner } from './data';
 import { revalidatePath } from 'next/cache';
 import type { User } from './definitions';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from './firebase';
 
 const RegistrationSchema = z.object({
   name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres.' }),
@@ -83,15 +85,16 @@ export async function authenticate(prevState: LoginState | undefined, formData: 
   
   const { email, password } = validatedFields.data;
   
-  // This is a simplified, non-secure way to check credentials for this specific app.
-  if (email === 'decolivecassino@gmail.com' && password === 'SorteioDecoLive') {
-      return { success: true, message: 'Login bem sucedido' };
+  try {
+     // This is a simplified, non-secure way to check credentials for this specific app.
+    if (email === 'decolivecassino@gmail.com' && password === 'SorteioDecoLive') {
+        return { success: true, message: 'Login bem sucedido' };
+    }
+    return { message: 'E-mail ou senha inválidos.', success: false };
+  } catch (error) {
+    console.error('Authentication error:', error);
+    return { message: 'E-mail ou senha inválidos.', success: false };
   }
-
-  return {
-    message: 'E-mail ou senha inválidos.',
-    success: false,
-  };
 }
 
 

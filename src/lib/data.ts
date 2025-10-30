@@ -1,51 +1,111 @@
 
-import type { User, Winner } from './definitions';
+'use server';
 
-// In-memory data store
-let users: User[] = [];
-let winners: Winner[] = [];
-let raffleStats = { totalRaffles: 0 };
+import { db } from '@/lib/firebase';
+import type { User, Winner } from './definitions';
+import {
+  collection,
+  getDocs,
+  addDoc,
+  writeBatch,
+  doc,
+  runTransaction,
+  serverTimestamp,
+  query,
+  orderBy,
+  limit
+} from 'firebase/firestore';
+
+// Collection references
+const usersCol = collection(db, 'registered_users');
+const winnersCol = collection(db, 'winners');
+const statsDoc = doc(db, 'stats', 'raffle');
 
 export async function getRaffleStats(): Promise<{ totalRaffles: number }> {
-  return Promise.resolve(raffleStats);
+  try {
+    const docSnap = await runTransaction(db, async (transaction) => {
+        const sfDoc = await transaction.get(statsDoc);
+        if (!sfDoc.exists()) {
+            return { totalRaffles: 0 };
+        }
+        return sfDoc.data() as { totalRaffles: number };
+    });
+    return docSnap;
+  } catch (e) {
+    console.error("Error getting raffle stats: ", e);
+    // Return a default value in case of error
+    return { totalRaffles: 0 };
+  }
 }
 
 export async function incrementRaffles(): Promise<void> {
-  raffleStats.totalRaffles += 1;
-  return Promise.resolve();
+  try {
+    await runTransaction(db, async (transaction) => {
+      const sfDoc = await transaction.get(statsDoc);
+      if (!sfDoc.exists()) {
+        transaction.set(statsDoc, { totalRaffles: 1 });
+      } else {
+        const newTotal = (sfDoc.data().totalRaffles || 0) + 1;
+        transaction.update(statsDoc, { totalRaffles: newTotal });
+      }
+    });
+  } catch (e) {
+    console.error("Error incrementing raffles: ", e);
+  }
 }
 
 export async function getUsers(): Promise<User[]> {
-  // Sort users by creation date, descending
-  const sortedUsers = [...users].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  return Promise.resolve(sortedUsers);
+  const q = query(usersCol, orderBy('createdAt', 'desc'));
+  const querySnapshot = await getDocs(q);
+  const users = querySnapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      name: data.name,
+      cpf: data.cpf,
+      casinoId: data.casinoId,
+      createdAt: data.createdAt.toDate(),
+    };
+  });
+  return users;
 }
 
 export async function addUser(data: { name: string; cpf: string; casinoId: string }): Promise<void> {
-    const newUser: User = {
-        id: new Date().toISOString() + Math.random(), // simple unique id
+    await addDoc(usersCol, {
         ...data,
-        createdAt: new Date(),
-    }
-    users.push(newUser);
-    return Promise.resolve();
+        createdAt: serverTimestamp(),
+    });
 }
 
 export async function clearUsers(): Promise<void> {
-    users = [];
-    return Promise.resolve();
+    const querySnapshot = await getDocs(usersCol);
+    const batch = writeBatch(db);
+    querySnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+    });
+    await batch.commit();
 }
 
 export async function addWinner(user: User): Promise<void> {
-    const newWinner: Winner = {
+    await addDoc(winnersCol, {
         ...user,
-        wonAt: new Date(),
-    }
-    winners.push(newWinner);
-    return Promise.resolve();
+        wonAt: serverTimestamp(),
+    });
 }
 
 export async function getWinners(): Promise<Winner[]> {
-    const sortedWinners = [...winners].sort((a, b) => b.wonAt.getTime() - a.wonAt.getTime());
-    return Promise.resolve(sortedWinners);
+    const q = query(winnersCol, orderBy('wonAt', 'desc'), limit(100));
+    const querySnapshot = await getDocs(q);
+    const winners = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            name: data.name,
+            cpf: data.cpf,
+            casinoId: data.casinoId,
+            createdAt: data.createdAt.toDate(),
+            wonAt: data.wonAt.toDate(),
+        }
+    });
+    return winners;
 }
