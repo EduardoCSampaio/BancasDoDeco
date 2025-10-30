@@ -6,14 +6,17 @@ service cloud.firestore {
     match /registered_users/{userId} {
       // Allow anyone to create a user registration
       allow create: if true;
+
+      // Allow authenticated admins to list all users
+      allow list: if request.auth != null;
       
-      // Allow only authenticated admins to read, update, or delete
+      // Allow authenticated admins to read, update, or delete specific users
       allow read, update, delete: if request.auth != null; 
     }
 
     match /winners/{winnerId} {
       // Allow anyone to read the list of winners
-      allow read: if true;
+      allow list, get: if true;
       
       // Allow only authenticated admins to add new winners
       allow create: if request.auth != null;
