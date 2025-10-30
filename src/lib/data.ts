@@ -1,7 +1,9 @@
 
 'use server';
 
-import { db } from '@/lib/firebase';
+import { getFirestore } from 'firebase-admin/firestore';
+import { getAdminApp } from './firebase-admin';
+
 import type { User, Winner } from './definitions';
 import {
   collection,
@@ -16,8 +18,10 @@ import {
   limit,
   updateDoc
 } from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase';
 
 // Collection references
+const db = getFirestore(getAdminApp());
 const usersCol = collection(db, 'registered_users');
 const winnersCol = collection(db, 'winners');
 const statsDoc = doc(db, 'stats', 'raffle');
@@ -96,7 +100,8 @@ export async function addWinner(user: User): Promise<void> {
 }
 
 export async function updateWinnerStatus(id: string, status: 'Pendente' | 'Pix Enviado'): Promise<void> {
-    const winnerRef = doc(db, 'winners', id);
+    const { firestore } = initializeFirebase();
+    const winnerRef = doc(firestore, 'winners', id);
     await updateDoc(winnerRef, { status });
 }
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { collection, query, orderBy, limit, onSnapshot, DocumentData } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useFirestore } from '@/firebase';
 import type { Winner } from '@/lib/definitions';
 import {
   Card,
@@ -54,9 +54,11 @@ function WinnersSkeleton() {
 export default function WinnersPage() {
   const [winners, setWinners] = useState<Winner[]>([]);
   const [loading, setLoading] = useState(true);
+  const firestore = useFirestore();
 
   useEffect(() => {
-    const winnersCol = collection(db, 'winners');
+    if (!firestore) return;
+    const winnersCol = collection(firestore, 'winners');
     const q = query(winnersCol, orderBy('wonAt', 'desc'), limit(100));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -80,7 +82,7 @@ export default function WinnersPage() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [firestore]);
 
   return (
     <Card className="shadow-lg border-primary/20 bg-card/80 backdrop-blur-sm">

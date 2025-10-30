@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User } from '@/lib/definitions';
+import type { User } from '@/lib/definitions';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { useFirestore } from '@/firebase';
 import { UserTable } from '@/components/user-table';
 import { ResetButton } from '@/components/reset-button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -31,9 +31,12 @@ function DashboardSkeleton() {
 export default function DashboardPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const firestore = useFirestore();
 
   useEffect(() => {
-    const usersCol = collection(db, 'registered_users');
+    if (!firestore) return;
+
+    const usersCol = collection(firestore, 'registered_users');
     const q = query(usersCol, orderBy('createdAt', 'desc'));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -56,7 +59,7 @@ export default function DashboardPage() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [firestore]);
 
   return (
     <Card className="shadow-lg border-primary/20 bg-card/80 backdrop-blur-sm">
