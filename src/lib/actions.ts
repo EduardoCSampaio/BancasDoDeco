@@ -2,9 +2,10 @@
 'use server';
 
 import { z } from 'zod';
-import { addUser, clearUsers, incrementRaffles, addWinner, updateWinnerStatus } from './data';
 import { revalidatePath } from 'next/cache';
-import type { User } from './definitions';
+import type { User, Winner } from './definitions';
+import { getFirestore } from 'firebase-admin/firestore';
+import { initializeAdminApp } from './firebase-admin';
 
 const RegistrationSchema = z.object({
   name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres.' }),
@@ -24,8 +25,70 @@ export type RegistrationState = {
   success?: boolean;
 };
 
+// --- DATABASE FUNCTIONS ---
+// These functions interact with Firestore and should only be called from server actions.
+
+async function getDb() {
+    const adminApp = initializeAdminApp();
+    return getFirestore(adminApp);
+}
+
+async function addUserToDb(data: { name: string; cpf: string; casinoId: string }): Promise<void> {
+    const db = await getDb();
+    const usersCol = db.collection('registered_users');
+    await usersCol.add({
+        ...data,
+        createdAt: new Date(),
+    });
+}
+
+async function clearUsersFromDb(): Promise<void> {
+    const db = await getDb();
+    const usersCol = db.collection('registered_users');
+    const querySnapshot = await usersCol.get();
+    if (querySnapshot.empty) return;
+    
+    const batch = db.batch();
+    querySnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+    });
+    await batch.commit();
+}
+
+async function addWinnerToDb(user: User): Promise<void> {
+    const db = await getDb();
+    const winnersCol = db.collection('winners');
+    await winnersCol.add({
+        ...user,
+        wonAt: new Date(),
+        status: 'Pendente',
+    });
+}
+
+async function updateWinnerStatusInDb(id: string, status: 'Pendente' | 'Pix Enviado'): Promise<void> {
+    const db = await getDb();
+    const winnerRef = db.collection('winners').doc(id);
+    await winnerRef.update({ status });
+}
+
+async function incrementRafflesInDb(): Promise<void> {
+    const db = await getDb();
+    const statsDocRef = db.collection('stats').doc('raffle');
+    await db.runTransaction(async (transaction) => {
+        const sfDoc = await transaction.get(statsDocRef);
+        if (!sfDoc.exists) {
+            transaction.set(statsDocRef, { totalRaffles: 1 });
+        } else {
+            const newTotal = (sfDoc.data()?.totalRaffles || 0) + 1;
+            transaction.update(statsDocRef, { totalRaffles: newTotal });
+        }
+    });
+}
+
+
+// --- SERVER ACTIONS ---
+
 export async function registerUser(prevState: RegistrationState, formData: FormData) {
-  // Remove formatting from CPF
   const rawCpf = (formData.get('cpf') as string || '').replace(/[.\-]/g, '');
 
   const validatedFields = RegistrationSchema.safeParse({
@@ -43,7 +106,7 @@ export async function registerUser(prevState: RegistrationState, formData: FormD
   }
 
   try {
-    await addUser(validatedFields.data);
+    await addUserToDb(validatedFields.data);
     revalidatePath('/dashboard');
     return {
       message: 'Cadastro realizado com sucesso!',
@@ -97,7 +160,7 @@ export async function authenticate(prevState: LoginState | undefined, formData: 
 
 export async function resetEntries() {
   try {
-    await clearUsers();
+    await clearUsersFromDb();
     revalidatePath('/dashboard');
     revalidatePath('/dashboard/roulette');
     return { success: true, message: 'As inscrições foram resetadas.' };
@@ -109,8 +172,8 @@ export async function resetEntries() {
 
 export async function handleNewWinner(winner: User) {
     try {
-        await incrementRaffles();
-        await addWinner(winner);
+        await incrementRafflesInDb();
+        await addWinnerToDb(winner);
         revalidatePath('/dashboard/roulette');
         revalidatePath('/dashboard/winners');
     } catch (error) {
@@ -120,11 +183,38 @@ export async function handleNewWinner(winner: User) {
 
 export async function updateWinnerStatusAction(id: string, status: 'Pendente' | 'Pix Enviado') {
   try {
-    await updateWinnerStatus(id, status);
+    await updateWinnerStatusInDb(id, status);
     revalidatePath('/dashboard/winners');
     return { success: true, message: 'Status atualizado com sucesso.' };
   } catch (error) {
     console.error('Failed to update winner status:', error);
     return { success: false, message: 'Falha ao atualizar o status.' };
   }
+}
+
+export async function getRouletteData() {
+    const db = await getDb();
+    
+    // Get Users
+    const usersCol = db.collection('registered_users');
+    const usersQuery = usersCol.orderBy('createdAt', 'desc');
+    const usersSnapshot = await usersQuery.get();
+    const users = usersSnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            name: data.name,
+            cpf: data.cpf,
+            casinoId: data.casinoId,
+            // Firestore timestamps need to be converted to be serializable
+            createdAt: data.createdAt.toDate().toISOString(),
+        } as User;
+    });
+
+    // Get Stats
+    const statsDocRef = db.collection('stats').doc('raffle');
+    const docSnap = await statsDocRef.get();
+    const totalRaffles = docSnap.exists ? (docSnap.data()?.totalRaffles || 0) : 0;
+    
+    return { users, totalRaffles };
 }

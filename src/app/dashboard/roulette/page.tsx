@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getRaffleStats, getUsers } from '@/lib/data';
+import { getRouletteData } from '@/lib/actions';
 import { Roulette } from '@/components/roulette';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Ticket, Trophy } from 'lucide-react';
@@ -22,6 +22,12 @@ function RouletteSkeleton() {
     )
 }
 
+// Helper to convert ISO string back to Date object
+function parseUsers(users: any[]): User[] {
+    return users.map(u => ({ ...u, createdAt: new Date(u.createdAt) }));
+}
+
+
 export default function RoulettePage() {
     const [users, setUsers] = useState<User[]>([]);
     const [totalRaffles, setTotalRaffles] = useState(0);
@@ -33,12 +39,10 @@ export default function RoulettePage() {
         async function fetchData() {
             setLoading(true);
             try {
-                const [usersData, statsData] = await Promise.all([
-                    getUsers(),
-                    getRaffleStats()
-                ]);
-                setUsers(usersData);
-                setTotalRaffles(statsData.totalRaffles);
+                // Call the server action
+                const { users, totalRaffles } = await getRouletteData();
+                setUsers(parseUsers(users));
+                setTotalRaffles(totalRaffles);
             } catch (error) {
                 console.error("Failed to fetch roulette data:", error);
             } finally {
@@ -86,3 +90,4 @@ export default function RoulettePage() {
         </div>
     );
 }
+
