@@ -48,7 +48,7 @@ export default function LoginPage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="password">Senha</Label>
-                            <Input id="password" name="password" type="password" required defaultValue="SorteioDecoLive" />
+                            <Input id="password" name="password" type="password" required />
                         </div>
                         {state?.message && (
                             <div className="flex items-center space-x-2 text-sm text-destructive">

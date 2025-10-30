@@ -88,7 +88,7 @@ export async function authenticate(prevState: LoginState | undefined, formData: 
   
   try {
      // This is a simplified, non-secure way to check credentials for this specific app.
-    if (email === 'decolivecassino@gmail.com' && password === 'SorteioDecoLive') {
+    if (email === 'decolivecassino@gmail.com' && password === process.env.ADMIN_PASSWORD) {
         return { success: true, message: 'Login bem sucedido' };
     }
     return { message: 'E-mail ou senha inválidos.', success: false };
