@@ -13,8 +13,9 @@ import {
   runTransaction,
   addDoc,
   getDocs,
+  serverTimestamp
 } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase'; // Using client-side init, fine for revalidate.
+
 
 const RegistrationSchema = z.object({
   name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres.' }),
@@ -127,7 +128,7 @@ export async function handleNewWinner(db: any, winner: User) { // db will be pas
         const statsDocRef = doc(db, 'stats', 'raffle');
         await runTransaction(db, async (transaction) => {
             const sfDoc = await transaction.get(statsDocRef);
-            if (!sfDoc.exists) {
+            if (!sfDoc.exists()) {
                 transaction.set(statsDocRef, { totalRaffles: 1 });
             } else {
                 const newTotal = (sfDoc.data()?.totalRaffles || 0) + 1;
@@ -138,7 +139,7 @@ export async function handleNewWinner(db: any, winner: User) { // db will be pas
         const winnersCol = collection(db, 'winners');
         await addDoc(winnersCol, {
              ...winner,
-            wonAt: new Date(),
+            wonAt: serverTimestamp(),
             status: 'Pendente',
         });
         
