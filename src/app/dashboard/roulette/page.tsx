@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useFirestore } from '@/firebase';
-import { collection, getDocs, doc, getDoc, query } from 'firebase/firestore';
+import { collection, doc, getDoc, query, onSnapshot } from 'firebase/firestore';
 import { Roulette } from '@/components/roulette';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Ticket, Trophy } from 'lucide-react';
@@ -33,38 +33,42 @@ export default function RoulettePage() {
 
     useEffect(() => {
         if (!firestore) return;
+        setLoading(true);
 
-        async function fetchData() {
-            setLoading(true);
-            try {
-                // Get Users
-                const usersCol = collection(firestore, 'registered_users');
-                const usersQuery = query(usersCol); // Removed orderBy
-                const usersSnapshot = await getDocs(usersQuery);
-                const usersData = usersSnapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data(),
-                    createdAt: doc.data().createdAt?.toDate(),
-                } as User)).filter(u => u.createdAt);
-
-                // Sort on the client-side
-                usersData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-                setUsers(usersData);
-
-                // Get Stats
-                const statsDocRef = doc(firestore, 'stats', 'raffle');
-                const docSnap = await getDoc(statsDocRef);
-                const totalRafflesData = docSnap.exists() ? (docSnap.data()?.totalRaffles || 0) : 0;
-                setTotalRaffles(totalRafflesData);
-
-            } catch (error) {
-                console.error("Failed to fetch roulette data:", error);
-            } finally {
+        // Get Users
+        const usersCol = collection(firestore, 'registered_users');
+        const usersQuery = query(usersCol);
+        const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
+            const usersData = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+                createdAt: doc.data().createdAt?.toDate(),
+            } as User)).filter(u => u.createdAt);
+            
+            usersData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+            setUsers(usersData);
+            if(loading){ // Only stop loading once users are loaded initially
                 setLoading(false);
             }
+        }, (error) => {
+            console.error("Failed to fetch users:", error);
+            setLoading(false);
+        });
+
+        // Get Stats
+        const statsDocRef = doc(firestore, 'stats', 'raffle');
+        const unsubscribeStats = onSnapshot(statsDocRef, (docSnap) => {
+            const totalRafflesData = docSnap.exists() ? (docSnap.data()?.totalRaffles || 0) : 0;
+            setTotalRaffles(totalRafflesData);
+        }, (error) => {
+            console.error("Failed to fetch raffle stats:", error);
+        });
+        
+        return () => {
+            unsubscribeUsers();
+            unsubscribeStats();
         }
-        fetchData();
-    }, [firestore]);
+    }, [firestore, loading]);
 
     return (
         <div className="flex justify-center">
