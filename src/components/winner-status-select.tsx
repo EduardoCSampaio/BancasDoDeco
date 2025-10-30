@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { updateWinnerStatusAction } from '@/lib/actions';
-import { useToast } from './ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import type { Winner } from '@/lib/definitions';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
@@ -55,4 +55,3 @@ export function WinnerStatusSelect({ winner }: { winner: Winner }) {
         </Select>
     );
 }
-
