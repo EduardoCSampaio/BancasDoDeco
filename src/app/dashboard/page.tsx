@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { User } from '@/lib/definitions';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { UserTable } from '@/components/user-table';
 import { ResetButton } from '@/components/reset-button';
@@ -37,7 +37,7 @@ export default function DashboardPage() {
     if (!firestore) return;
 
     const usersCol = collection(firestore, 'registered_users');
-    const q = query(usersCol, orderBy('createdAt', 'desc'));
+    const q = query(usersCol);
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const usersData = querySnapshot.docs.map((doc) => {
@@ -47,11 +47,14 @@ export default function DashboardPage() {
           name: data.name,
           cpf: data.cpf,
           casinoId: data.casinoId,
-          // Firestore Timestamps need to be converted to JS Dates
           createdAt: data.createdAt?.toDate(), 
         } as User;
-      });
-      setUsers(usersData.filter(u => u.createdAt)); // Filter out users where date conversion might fail
+      }).filter(u => u.createdAt);
+      
+      // Sort on the client-side
+      usersData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+      setUsers(usersData);
       setLoading(false);
     }, (error) => {
         console.error("Error fetching users:", error);

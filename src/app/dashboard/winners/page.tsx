@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, limit, onSnapshot, DocumentData } from 'firebase/firestore';
+import { collection, query, onSnapshot, DocumentData } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Winner } from '@/lib/definitions';
 import {
@@ -59,7 +59,7 @@ export default function WinnersPage() {
   useEffect(() => {
     if (!firestore) return;
     const winnersCol = collection(firestore, 'winners');
-    const q = query(winnersCol, orderBy('wonAt', 'desc'), limit(100));
+    const q = query(winnersCol); // Removed orderBy and limit
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const winnersData = querySnapshot.docs.map((doc) => {
@@ -73,8 +73,12 @@ export default function WinnersPage() {
           wonAt: data.wonAt?.toDate(),
           status: data.status || 'Pendente',
         } as Winner;
-      });
-      setWinners(winnersData);
+      }).filter(w => w.wonAt); // Ensure winner has a wonAt date
+
+      // Sort on the client-side
+      winnersData.sort((a, b) => b.wonAt.getTime() - a.wonAt.getTime());
+
+      setWinners(winnersData.slice(0, 100)); // Apply limit on the client
       setLoading(false);
     }, (error) => {
         console.error("Error fetching winners:", error);

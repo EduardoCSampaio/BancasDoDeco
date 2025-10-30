@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useFirestore } from '@/firebase';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query } from 'firebase/firestore';
 import { Roulette } from '@/components/roulette';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Ticket, Trophy } from 'lucide-react';
@@ -39,12 +39,16 @@ export default function RoulettePage() {
             try {
                 // Get Users
                 const usersCol = collection(firestore, 'registered_users');
-                const usersSnapshot = await getDocs(usersCol);
+                const usersQuery = query(usersCol); // Removed orderBy
+                const usersSnapshot = await getDocs(usersQuery);
                 const usersData = usersSnapshot.docs.map((doc) => ({
                     id: doc.id,
                     ...doc.data(),
-                    createdAt: doc.data().createdAt.toDate(),
-                } as User));
+                    createdAt: doc.data().createdAt?.toDate(),
+                } as User)).filter(u => u.createdAt);
+
+                // Sort on the client-side
+                usersData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
                 setUsers(usersData);
 
                 // Get Stats
