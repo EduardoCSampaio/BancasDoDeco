@@ -82,7 +82,7 @@ export async function authenticate(prevState: LoginState, formData: FormData) {
 
   // Em um aplicativo real, você procuraria o usuário no banco de dados
   // e verificaria a senha. Usaremos valores fixos para este exemplo.
-  if (email === 'admin@example.com' && password === 'password') {
+  if (email === 'decolivecassino@gmail.com' && password === 'SorteioDecoLive') {
     // Aqui você normalmente criaria uma sessão e definiria um cookie.
     // Para este exemplo, apenas redirecionaremos.
     redirect('/dashboard');
