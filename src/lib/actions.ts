@@ -13,9 +13,9 @@ import {
   runTransaction,
   addDoc,
   getDocs,
-  serverTimestamp
+  serverTimestamp,
+  Firestore,
 } from 'firebase/firestore';
-
 
 const RegistrationSchema = z.object({
   name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres.' }),
@@ -36,32 +36,34 @@ export type RegistrationState = {
   validatedData?: z.infer<typeof RegistrationSchema>;
 };
 
-export async function registerUser(prevState: RegistrationState, formData: FormData) {
-    const rawCpf = (formData.get('cpf') as string || '').replace(/[.\-]/g, '');
+export async function registerUser(
+  prevState: RegistrationState,
+  formData: FormData
+) {
+  const rawCpf = (formData.get('cpf') as string || '').replace(/[.\-]/g, '');
 
-    const validatedFields = RegistrationSchema.safeParse({
-        name: formData.get('name'),
-        cpf: rawCpf,
-        casinoId: formData.get('casinoId'),
-    });
+  const validatedFields = RegistrationSchema.safeParse({
+    name: formData.get('name'),
+    cpf: rawCpf,
+    casinoId: formData.get('casinoId'),
+  });
 
-    if (!validatedFields.success) {
-        return {
-        errors: validatedFields.error.flatten().fieldErrors,
-        message: 'Campos inválidos. Falha ao validar.',
-        success: false,
-        };
-    }
-
-    // Since write is on client, we just revalidate and return success
-    revalidatePath('/dashboard');
+  if (!validatedFields.success) {
     return {
-        message: 'Validação bem-sucedida!',
-        success: true,
-        validatedData: validatedFields.data,
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Campos inválidos. Falha ao validar.',
+      success: false,
     };
-}
+  }
 
+  // Since write is on client, we just revalidate and return success
+  revalidatePath('/dashboard');
+  return {
+    message: 'Validação bem-sucedida!',
+    success: true,
+    validatedData: validatedFields.data,
+  };
+}
 
 const LoginSchema = z.object({
   email: z.string().email({ message: 'Por favor, insira um e-mail válido.' }),
@@ -69,16 +71,25 @@ const LoginSchema = z.object({
 });
 
 export type LoginState = {
-    errors?: {
-        email?: string[];
-        password?: string[];
-    };
-    message?: string | null;
-    success?: boolean;
+  errors?: {
+    email?: string[];
+    password?: string[];
+  };
+  message?: string | null;
+  success?: boolean;
 };
 
-export async function authenticate(prevState: LoginState | undefined, formData: FormData): Promise<LoginState> {
-  const validatedFields = LoginSchema.safeParse(Object.fromEntries(formData.entries()));
+export async function authenticate(
+  prevState: LoginState | undefined,
+  formData: FormData
+): Promise<LoginState> {
+  // This function body is now a placeholder.
+  // The actual authentication logic is handled on the client-side with Firebase Auth.
+  // We keep the structure for potential future server-side validation if needed.
+
+  const validatedFields = LoginSchema.safeParse(
+    Object.fromEntries(formData.entries())
+  );
 
   if (!validatedFields.success) {
     return {
@@ -88,29 +99,23 @@ export async function authenticate(prevState: LoginState | undefined, formData: 
     };
   }
   
-  const { email, password } = validatedFields.data;
+  // You might add checks here if needed, but for now we assume client-side handles it.
 
-  // This is a simplified check.
-  if (email === 'decolivecassino@gmail.com' && password === 'Banca@123') {
-     revalidatePath('/dashboard');
-     return { success: true, message: 'Login bem sucedido' };
-  }
-  
-  return { message: 'E-mail ou senha inválidos.', success: false };
+  return { success: true, message: 'Autenticação processada no cliente.' };
 }
 
-
-export async function resetEntries(db: any) { // db will be passed from client
+export async function resetEntries(db: Firestore) {
+  // db will be passed from client
   try {
     const usersCol = collection(db, 'registered_users');
     const querySnapshot = await getDocs(usersCol);
     if (querySnapshot.empty) {
-        return { success: true, message: 'Nenhuma inscrição para resetar.' };
+      return { success: true, message: 'Nenhuma inscrição para resetar.' };
     }
-    
+
     const batch = writeBatch(db);
     querySnapshot.forEach((doc) => {
-        batch.delete(doc.ref);
+      batch.delete(doc.ref);
     });
     await batch.commit();
 
@@ -123,34 +128,40 @@ export async function resetEntries(db: any) { // db will be passed from client
   }
 }
 
-export async function handleNewWinner(db: any, winner: User) { // db will be passed from client
-    try {
-        const statsDocRef = doc(db, 'stats', 'raffle');
-        await runTransaction(db, async (transaction) => {
-            const sfDoc = await transaction.get(statsDocRef);
-            if (!sfDoc.exists()) {
-                transaction.set(statsDocRef, { totalRaffles: 1 });
-            } else {
-                const newTotal = (sfDoc.data()?.totalRaffles || 0) + 1;
-                transaction.update(statsDocRef, { totalRaffles: newTotal });
-            }
-        });
+export async function handleNewWinner(db: Firestore, winner: User) {
+  // db will be passed from client
+  try {
+    const statsDocRef = doc(db, 'stats', 'raffle');
+    await runTransaction(db, async (transaction) => {
+      const sfDoc = await transaction.get(statsDocRef);
+      if (!sfDoc.exists()) {
+        transaction.set(statsDocRef, { totalRaffles: 1 });
+      } else {
+        const newTotal = (sfDoc.data()?.totalRaffles || 0) + 1;
+        transaction.update(statsDocRef, { totalRaffles: newTotal });
+      }
+    });
 
-        const winnersCol = collection(db, 'winners');
-        await addDoc(winnersCol, {
-             ...winner,
-            wonAt: serverTimestamp(),
-            status: 'Pendente',
-        });
-        
-        revalidatePath('/dashboard/roulette');
-        revalidatePath('/dashboard/winners');
-    } catch (error) {
-        console.error('Failed to handle new winner:', error);
-    }
+    const winnersCol = collection(db, 'winners');
+    await addDoc(winnersCol, {
+      ...winner,
+      wonAt: serverTimestamp(),
+      status: 'Pendente',
+    });
+
+    revalidatePath('/dashboard/roulette');
+    revalidatePath('/dashboard/winners');
+  } catch (error) {
+    console.error('Failed to handle new winner:', error);
+  }
 }
 
-export async function updateWinnerStatusAction(db: any, id: string, status: 'Pendente' | 'Pix Enviado') { // db will be passed from client
+export async function updateWinnerStatusAction(
+  db: Firestore,
+  id: string,
+  status: 'Pendente' | 'Pix Enviado'
+) {
+  // db will be passed from client
   try {
     const winnerRef = doc(db, 'winners', id);
     await updateDoc(winnerRef, { status });

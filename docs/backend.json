@@ -1,7 +1,6 @@
 {
   "entities": {
     "UserRegistration": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "UserRegistration",
       "type": "object",
       "description": "Stores user registration data for the Jackpot Sign-Up application.",
@@ -30,68 +29,45 @@
         "casinoAccountId"
       ]
     },
-    "AdminAccount": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "AdminAccount",
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's public profile information.",
       "type": "object",
-      "description": "Stores administrative account information for accessing the dashboard.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the admin account."
+        "displayName": {
+          "type": "string"
         },
-        "username": {
+        "photoURL": {
           "type": "string",
-          "description": "The admin's username for login."
+          "format": "uri"
         }
       },
-      "required": [
-        "id",
-        "username"
-      ]
+      "required": []
     }
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "password"
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/user_registrations/{registrationId}",
-        "definition": {
-          "entityName": "UserRegistration",
-          "schema": {
-            "$ref": "#/backend/entities/UserRegistration"
-          },
-          "description": "Stores user registration data collected from the sign-up form. Accessible only by administrators.  No denormalized authorization fields required.",
-          "params": [
-            {
-              "name": "registrationId",
-              "description": "Unique identifier for the user registration entry."
-            }
-          ]
-        }
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/backend/entities/UserProfile"
       },
-      {
-        "path": "/roles_admin/{adminId}",
-        "definition": {
-          "entityName": "AdminAccount",
-          "schema": {
-            "$ref": "#/backend/entities/AdminAccount"
-          },
-          "description": "Collection to store admin user IDs. Existence of a document grants admin privileges. No denormalized authorization fields required.",
-          "params": [
-            {
-              "name": "adminId",
-              "description": "Unique identifier for the admin account, corresponding to the Firebase Auth UID."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "This Firestore data structure is designed for the Jackpot Sign-Up application, prioritizing security, scalability, and debuggability according to the specified core design principles. It separates user registration data and admin account data into distinct collections, enabling clear security rules and efficient data management.\n\n**Authorization Independence and QAPs:**\n\n*   **/user_registrations Collection:** This collection stores user registration data. Authorization is primarily based on the admin role, controlled via the `/roles_admin/{uid}` document existence. While individual user data is not explicitly owned, the segregation into its own collection, coupled with admin-only access, ensures that `list` operations are secured by verifying admin status, satisfying the QAPs principle. There is no need to denormalize any data because the access is controlled at the collection level based on admin status.\n*   **/roles_admin Collection:**  Membership in this collection grants admin privileges. This follows the DBAC principle, enabling secure admin login and dashboard access.  The existence of a document with the user's UID in this collection grants them admin rights. Security rules will check for the existence of this document.\n\n**Structural Segregation:**\nThe data structure segregates user registration data from admin account data, ensuring that each collection has a homogeneous security posture. This simplifies the security rules, making them more manageable and less prone to errors. Specifically, `/user_registrations` requires admin privileges, while `/roles_admin` grants admin access.\n\n**Access Modeling:**\nThe structure uses existence-based roles for admin privileges. The `roles_admin` collection determines admin access based on the presence of a document with the user's UID, enabling clear and secure role management.\n\n**Data Clarity and Predictability:**\nThe schema for each document is explicitly defined using JSON schema, ensuring data consistency and predictability. The use of descriptive collection names (`user_registrations`, `roles_admin`) enhances clarity and maintainability."
+      "description": "Stores public information for a user."
+    },
+    "/user_registrations/{registrationId}": {
+      "schema": {
+        "$ref": "#/backend/entities/UserRegistration"
+      },
+      "description": "Stores user registration data collected from the sign-up form. Accessible only by administrators."
+    },
+    "/roles_admin/{adminId}": {
+      "schema": {
+        "$ref": "#/backend/entities/UserProfile"
+      },
+      "description": "Collection to store admin user IDs. Existence of a document grants admin privileges."
+    }
   }
 }
