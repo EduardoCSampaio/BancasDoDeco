@@ -4,7 +4,8 @@
 import { z } from 'zod';
 import { addUser, clearUsers, incrementRaffles, addWinner } from './data';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase-admin'; // This is a server-side auth instance
 import type { User } from './definitions';
 
 const RegistrationSchema = z.object({
@@ -84,10 +85,18 @@ export async function authenticate(prevState: LoginState | undefined, formData: 
   
   const { email, password } = validatedFields.data;
   
-  // This is a simplified, non-secure way to check credentials for this specific app.
-  // In a real-world scenario, you would use Firebase Auth to securely verify credentials.
-  if (email === 'decolivecassino@gmail.com' && password === 'SorteioDecoLive') {
-      return { success: true, message: 'Login bem sucedido' };
+  try {
+    // This is a simplified, non-secure way to check credentials for this specific app.
+    // In a real-world scenario, you would use Firebase Auth to securely verify credentials.
+    if (email === 'decolivecassino@gmail.com' && password === 'SorteioDecoLive') {
+        return { success: true, message: 'Login bem sucedido' };
+    }
+  } catch (error) {
+    console.error('Authentication Error:', error);
+    return {
+      message: 'Falha na autenticação. Tente novamente.',
+      success: false,
+    };
   }
 
   return {
