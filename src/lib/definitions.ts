@@ -9,4 +9,5 @@ export type User = {
 
 export type Winner = User & {
     wonAt: Date;
+    status: 'Pendente' | 'Pix Enviado';
 }

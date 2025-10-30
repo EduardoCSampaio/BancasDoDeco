@@ -1,4 +1,5 @@
 
+
 import { getWinners } from '@/lib/data';
 import {
   Card,
@@ -17,6 +18,7 @@ import {
 } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trophy } from 'lucide-react';
+import { WinnerStatusSelect } from '@/components/winner-status-select';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +33,7 @@ export default async function WinnersPage() {
           <CardTitle className="font-headline text-3xl">Galeria de Ganhadores</CardTitle>
         </div>
         <CardDescription>
-          Lista de todos os sortudos dos sorteios anteriores.
+          Lista de todos os sortudos dos sorteios anteriores e status do pagamento.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -42,7 +44,8 @@ export default async function WinnersPage() {
                 <TableHead className="font-bold">Nome</TableHead>
                 <TableHead className="font-bold">CPF</TableHead>
                 <TableHead className="font-bold">ID Cassino</TableHead>
-                <TableHead className="font-bold text-right">Data do Sorteio</TableHead>
+                <TableHead className="font-bold">Data do Sorteio</TableHead>
+                <TableHead className="font-bold text-right">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -52,14 +55,17 @@ export default async function WinnersPage() {
                     <TableCell className="font-medium">{winner.name}</TableCell>
                     <TableCell>{winner.cpf}</TableCell>
                     <TableCell>{winner.casinoId}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell>
                       {winner.wonAt.toLocaleString('pt-BR')}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <WinnerStatusSelect winner={winner} />
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     Nenhum ganhador registrado ainda.
                   </TableCell>
                 </TableRow>

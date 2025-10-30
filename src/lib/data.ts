@@ -13,7 +13,8 @@ import {
   serverTimestamp,
   query,
   orderBy,
-  limit
+  limit,
+  updateDoc
 } from 'firebase/firestore';
 
 // Collection references
@@ -90,8 +91,15 @@ export async function addWinner(user: User): Promise<void> {
     await addDoc(winnersCol, {
         ...user,
         wonAt: serverTimestamp(),
+        status: 'Pendente',
     });
 }
+
+export async function updateWinnerStatus(id: string, status: 'Pendente' | 'Pix Enviado'): Promise<void> {
+    const winnerRef = doc(db, 'winners', id);
+    await updateDoc(winnerRef, { status });
+}
+
 
 export async function getWinners(): Promise<Winner[]> {
     const q = query(winnersCol, orderBy('wonAt', 'desc'), limit(100));
@@ -105,6 +113,7 @@ export async function getWinners(): Promise<Winner[]> {
             casinoId: data.casinoId,
             createdAt: data.createdAt.toDate(),
             wonAt: data.wonAt.toDate(),
+            status: data.status || 'Pendente',
         }
     });
     return winners;

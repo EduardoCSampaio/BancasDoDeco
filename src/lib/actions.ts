@@ -2,11 +2,9 @@
 'use server';
 
 import { z } from 'zod';
-import { addUser, clearUsers, incrementRaffles, addWinner } from './data';
+import { addUser, clearUsers, incrementRaffles, addWinner, updateWinnerStatus } from './data';
 import { revalidatePath } from 'next/cache';
 import type { User } from './definitions';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from './firebase';
 
 const RegistrationSchema = z.object({
   name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres.' }),
@@ -119,4 +117,15 @@ export async function handleNewWinner(winner: User) {
     } catch (error) {
         console.error('Failed to handle new winner:', error);
     }
+}
+
+export async function updateWinnerStatusAction(id: string, status: 'Pendente' | 'Pix Enviado') {
+  try {
+    await updateWinnerStatus(id, status);
+    revalidatePath('/dashboard/winners');
+    return { success: true, message: 'Status atualizado com sucesso.' };
+  } catch (error) {
+    console.error('Failed to update winner status:', error);
+    return { success: false, message: 'Falha ao atualizar o status.' };
+  }
 }
