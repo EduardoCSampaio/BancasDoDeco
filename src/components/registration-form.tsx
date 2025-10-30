@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState } from 'react';
@@ -55,22 +56,22 @@ export function RegistrationForm() {
   });
 
   useEffect(() => {
-    if (state.message) {
-      if (state.success) {
+    if (!state.success && state.message) {
         toast({
-          title: 'Sucesso!',
-          description: state.message,
-          variant: 'default',
+            title: 'Erro de Inscrição',
+            description: state.message,
+            variant: 'destructive',
         });
-        form.reset();
-        formRef.current?.reset();
-      } else {
-        toast({
-          title: 'Erro de Inscrição',
-          description: state.message,
-          variant: 'destructive',
-        });
-      }
+    }
+
+    if (state.success) {
+      toast({
+        title: 'Sucesso!',
+        description: state.message,
+        variant: 'default',
+      });
+      form.reset();
+      formRef.current?.reset();
     }
   }, [state, toast, form]);
 

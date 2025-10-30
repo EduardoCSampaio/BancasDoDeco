@@ -84,6 +84,8 @@ export async function authenticate(prevState: LoginState | undefined, formData: 
   
   const { email, password } = validatedFields.data;
   
+  // This is a simplified, non-secure way to check credentials for this specific app.
+  // In a real-world scenario, you would use Firebase Auth to securely verify credentials.
   if (email === 'decolivecassino@gmail.com' && password === 'SorteioDecoLive') {
       return { success: true, message: 'Login bem sucedido' };
   }
