@@ -1,7 +1,6 @@
 'use client';
 
-import { useActionState, useEffect } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -12,38 +11,29 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LogInIcon } from 'lucide-react';
-import { authenticate, type LoginState } from '@/lib/actions';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-
-function LoginButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button className="w-full" aria-disabled={pending} disabled={pending}>
-      {pending ? 'Entrando...' : 'Entrar'}
-    </Button>
-  );
-}
 
 export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
+  const { user } = useUser();
   const { toast } = useToast();
-  const initialState: LoginState = { message: null, errors: {} };
-  const [state, dispatch] = useActionState(authenticate, initialState);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [pending, setPending] = useState(false);
 
   useEffect(() => {
-    if (state?.success) {
+    if (user) {
       router.push('/dashboard');
     }
-  }, [state, router]);
+  }, [user, router]);
 
-  const handleLogin = async (formData: FormData) => {
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPending(true);
 
     if (!email || !password) {
       toast({
@@ -51,12 +41,13 @@ export default function LoginPage() {
         description: 'Email e senha são obrigatórios.',
         variant: 'destructive',
       });
+      setPending(false);
       return;
     }
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
+      // O useEffect cuidará do redirecionamento
     } catch (error: any) {
       const errorCode = error.code;
       let errorMessage = 'Ocorreu um erro ao fazer login.';
@@ -66,12 +57,16 @@ export default function LoginPage() {
         errorCode === 'auth/invalid-credential'
       ) {
         errorMessage = 'E-mail ou senha inválidos.';
+      } else if (errorCode === 'auth/invalid-email') {
+        errorMessage = 'O formato do e-mail é inválido.';
       }
       toast({
         title: 'Erro de Login',
         description: errorMessage,
         variant: 'destructive',
       });
+    } finally {
+      setPending(false);
     }
   };
 
@@ -87,7 +82,7 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -96,6 +91,9 @@ export default function LoginPage() {
                 type="email"
                 placeholder="admin@example.com"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
               />
             </div>
             <div className="space-y-2">
@@ -105,15 +103,14 @@ export default function LoginPage() {
                 name="password"
                 type="password"
                 required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
               />
             </div>
-            {state?.message && (
-              <div className="flex items-center space-x-2 text-sm text-destructive">
-                <LogInIcon className="h-4 w-4" />
-                <p>{state.message}</p>
-              </div>
-            )}
-            <LoginButton />
+            <Button className="w-full" type="submit" disabled={pending}>
+              {pending ? 'Entrando...' : 'Entrar'}
+            </Button>
           </form>
         </CardContent>
       </Card>

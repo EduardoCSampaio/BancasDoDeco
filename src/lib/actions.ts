@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import type { User } from './definitions';
 import {
-  getFirestore,
   doc,
   updateDoc,
   collection,
@@ -65,44 +64,6 @@ export async function registerUser(
   };
 }
 
-const LoginSchema = z.object({
-  email: z.string().email({ message: 'Por favor, insira um e-mail válido.' }),
-  password: z.string().min(1, { message: 'A senha é obrigatória.' }),
-});
-
-export type LoginState = {
-  errors?: {
-    email?: string[];
-    password?: string[];
-  };
-  message?: string | null;
-  success?: boolean;
-};
-
-export async function authenticate(
-  prevState: LoginState | undefined,
-  formData: FormData
-): Promise<LoginState> {
-  // This function body is now a placeholder.
-  // The actual authentication logic is handled on the client-side with Firebase Auth.
-  // We keep the structure for potential future server-side validation if needed.
-
-  const validatedFields = LoginSchema.safeParse(
-    Object.fromEntries(formData.entries())
-  );
-
-  if (!validatedFields.success) {
-    return {
-      errors: validatedFields.error.flatten().fieldErrors,
-      message: 'Campos inválidos.',
-      success: false,
-    };
-  }
-  
-  // You might add checks here if needed, but for now we assume client-side handles it.
-
-  return { success: true, message: 'Autenticação processada no cliente.' };
-}
 
 export async function resetEntries(db: Firestore) {
   // db will be passed from client
