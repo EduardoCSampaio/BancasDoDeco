@@ -4,7 +4,7 @@ export type User = {
   name: string;
   cpf: string;
   casinoId: string;
-  createdAt: Date;
+  createdAt: any; // Can be Date or Timestamp
 };
 
 export type Winner = User & {

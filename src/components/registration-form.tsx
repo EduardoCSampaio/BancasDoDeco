@@ -20,6 +20,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore } from '@/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const RegistrationSchema = z.object({
   name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres.' }),
@@ -41,6 +43,7 @@ function SubmitButton() {
 export function RegistrationForm() {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
+  const firestore = useFirestore();
   
   const initialState: RegistrationState = { message: null, errors: {}, success: false };
   const [state, dispatch] = useActionState(registerUser, initialState);
@@ -74,24 +77,39 @@ export function RegistrationForm() {
 
 
   useEffect(() => {
-    if (!state.success && state.message && !state.errors) {
+    // Handle server action result
+    if (!state) return;
+
+    if (state.success && state.validatedData && firestore) {
+      // Data is valid, now write to Firestore on the client
+      const usersCol = collection(firestore, 'registered_users');
+      addDoc(usersCol, {
+        ...state.validatedData,
+        createdAt: serverTimestamp(),
+      }).then(() => {
         toast({
+          title: 'Sucesso!',
+          description: "Cadastro realizado com sucesso!",
+        });
+        form.reset();
+        formRef.current?.reset();
+      }).catch((error) => {
+        console.error("Error writing to Firestore: ", error);
+        toast({
+          title: 'Erro de Inscrição',
+          description: "Falha ao salvar no banco de dados.",
+          variant: 'destructive',
+        });
+      });
+    } else if (!state.success && state.message) {
+      // Validation failed or other server error
+       toast({
             title: 'Erro de Inscrição',
             description: state.message,
             variant: 'destructive',
         });
     }
-
-    if (state.success) {
-      toast({
-        title: 'Sucesso!',
-        description: state.message,
-        variant: 'default',
-      });
-      form.reset();
-      formRef.current?.reset();
-    }
-  }, [state, toast, form]);
+  }, [state, firestore, toast, form]);
 
   return (
     <Form {...form}>

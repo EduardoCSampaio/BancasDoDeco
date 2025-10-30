@@ -4,8 +4,9 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import type { User, Winner } from './definitions';
-import { getFirestore } from 'firebase-admin/firestore';
-import { initializeAdminApp } from './firebase-admin';
+import { getFirestore, doc, updateDoc, collection, getDocs, query, orderBy, getDoc, runTransaction, addDoc, writeBatch } from 'firebase/firestore';
+import { db } from '@/firebase/config-for-actions';
+
 
 const RegistrationSchema = z.object({
   name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres.' }),
@@ -23,102 +24,33 @@ export type RegistrationState = {
   };
   message?: string | null;
   success?: boolean;
+  validatedData?: z.infer<typeof RegistrationSchema>;
 };
 
-// --- DATABASE FUNCTIONS ---
-// These functions interact with Firestore and should only be called from server actions.
-
-async function getDb() {
-    const adminApp = initializeAdminApp();
-    return getFirestore(adminApp);
-}
-
-async function addUserToDb(data: { name: string; cpf: string; casinoId: string }): Promise<void> {
-    const db = await getDb();
-    const usersCol = db.collection('registered_users');
-    await usersCol.add({
-        ...data,
-        createdAt: new Date(),
-    });
-}
-
-async function clearUsersFromDb(): Promise<void> {
-    const db = await getDb();
-    const usersCol = db.collection('registered_users');
-    const querySnapshot = await usersCol.get();
-    if (querySnapshot.empty) return;
-    
-    const batch = db.batch();
-    querySnapshot.forEach((doc) => {
-        batch.delete(doc.ref);
-    });
-    await batch.commit();
-}
-
-async function addWinnerToDb(user: User): Promise<void> {
-    const db = await getDb();
-    const winnersCol = db.collection('winners');
-    await winnersCol.add({
-        ...user,
-        wonAt: new Date(),
-        status: 'Pendente',
-    });
-}
-
-async function updateWinnerStatusInDb(id: string, status: 'Pendente' | 'Pix Enviado'): Promise<void> {
-    const db = await getDb();
-    const winnerRef = db.collection('winners').doc(id);
-    await winnerRef.update({ status });
-}
-
-async function incrementRafflesInDb(): Promise<void> {
-    const db = await getDb();
-    const statsDocRef = db.collection('stats').doc('raffle');
-    await db.runTransaction(async (transaction) => {
-        const sfDoc = await transaction.get(statsDocRef);
-        if (!sfDoc.exists) {
-            transaction.set(statsDocRef, { totalRaffles: 1 });
-        } else {
-            const newTotal = (sfDoc.data()?.totalRaffles || 0) + 1;
-            transaction.update(statsDocRef, { totalRaffles: newTotal });
-        }
-    });
-}
-
-
-// --- SERVER ACTIONS ---
-
 export async function registerUser(prevState: RegistrationState, formData: FormData) {
-  const rawCpf = (formData.get('cpf') as string || '').replace(/[.\-]/g, '');
+    const rawCpf = (formData.get('cpf') as string || '').replace(/[.\-]/g, '');
 
-  const validatedFields = RegistrationSchema.safeParse({
-    name: formData.get('name'),
-    cpf: rawCpf,
-    casinoId: formData.get('casinoId'),
-  });
+    const validatedFields = RegistrationSchema.safeParse({
+        name: formData.get('name'),
+        cpf: rawCpf,
+        casinoId: formData.get('casinoId'),
+    });
 
-  if (!validatedFields.success) {
-    return {
-      errors: validatedFields.error.flatten().fieldErrors,
-      message: 'Campos inválidos. Falha ao registrar.',
-      success: false,
-    };
-  }
-
-  try {
-    await addUserToDb(validatedFields.data);
+    if (!validatedFields.success) {
+        return {
+        errors: validatedFields.error.flatten().fieldErrors,
+        message: 'Campos inválidos. Falha ao validar.',
+        success: false,
+        };
+    }
+    
+    // Apenas validação aqui. A escrita será feita no cliente.
     revalidatePath('/dashboard');
     return {
-      message: 'Cadastro realizado com sucesso!',
-      success: true,
+        message: 'Validação bem-sucedida!',
+        success: true,
+        validatedData: validatedFields.data,
     };
-  } catch (error) {
-    console.error('Database Error:', error);
-    return {
-      message: 'Erro no banco de dados: Falha ao registrar usuário.',
-      success: false,
-    };
-  }
 }
 
 
@@ -160,7 +92,18 @@ export async function authenticate(prevState: LoginState | undefined, formData: 
 
 export async function resetEntries() {
   try {
-    await clearUsersFromDb();
+    const usersCol = collection(db, 'registered_users');
+    const querySnapshot = await getDocs(usersCol);
+    if (querySnapshot.empty) {
+        return { success: true, message: 'Nenhuma inscrição para resetar.' };
+    }
+    
+    const batch = writeBatch(db);
+    querySnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+    });
+    await batch.commit();
+
     revalidatePath('/dashboard');
     revalidatePath('/dashboard/roulette');
     return { success: true, message: 'As inscrições foram resetadas.' };
@@ -172,8 +115,24 @@ export async function resetEntries() {
 
 export async function handleNewWinner(winner: User) {
     try {
-        await incrementRafflesInDb();
-        await addWinnerToDb(winner);
+        const statsDocRef = doc(db, 'stats', 'raffle');
+        await runTransaction(db, async (transaction) => {
+            const sfDoc = await transaction.get(statsDocRef);
+            if (!sfDoc.exists) {
+                transaction.set(statsDocRef, { totalRaffles: 1 });
+            } else {
+                const newTotal = (sfDoc.data()?.totalRaffles || 0) + 1;
+                transaction.update(statsDocRef, { totalRaffles: newTotal });
+            }
+        });
+
+        const winnersCol = collection(db, 'winners');
+        await addDoc(winnersCol, {
+             ...winner,
+            wonAt: new Date(),
+            status: 'Pendente',
+        });
+        
         revalidatePath('/dashboard/roulette');
         revalidatePath('/dashboard/winners');
     } catch (error) {
@@ -183,7 +142,8 @@ export async function handleNewWinner(winner: User) {
 
 export async function updateWinnerStatusAction(id: string, status: 'Pendente' | 'Pix Enviado') {
   try {
-    await updateWinnerStatusInDb(id, status);
+    const winnerRef = doc(db, 'winners', id);
+    await updateDoc(winnerRef, { status });
     revalidatePath('/dashboard/winners');
     return { success: true, message: 'Status atualizado com sucesso.' };
   } catch (error) {
@@ -193,12 +153,10 @@ export async function updateWinnerStatusAction(id: string, status: 'Pendente' | 
 }
 
 export async function getRouletteData() {
-    const db = await getDb();
-    
     // Get Users
-    const usersCol = db.collection('registered_users');
-    const usersQuery = usersCol.orderBy('createdAt', 'desc');
-    const usersSnapshot = await usersQuery.get();
+    const usersCol = collection(db, 'registered_users');
+    const usersQuery = query(usersCol, orderBy('createdAt', 'desc'));
+    const usersSnapshot = await getDocs(usersQuery);
     const users = usersSnapshot.docs.map((doc) => {
         const data = doc.data();
         return {
@@ -212,9 +170,9 @@ export async function getRouletteData() {
     });
 
     // Get Stats
-    const statsDocRef = db.collection('stats').doc('raffle');
-    const docSnap = await statsDocRef.get();
-    const totalRaffles = docSnap.exists ? (docSnap.data()?.totalRaffles || 0) : 0;
+    const statsDocRef = doc(db, 'stats', 'raffle');
+    const docSnap = await getDoc(statsDocRef);
+    const totalRaffles = docSnap.exists() ? (docSnap.data()?.totalRaffles || 0) : 0;
     
     return { users, totalRaffles };
 }
