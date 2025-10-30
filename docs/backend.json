@@ -1,0 +1,113 @@
+{
+  "entities": {
+    "RegisteredUser": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RegisteredUser",
+      "type": "object",
+      "description": "Represents a user who has registered through the sign-up form.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the registered user."
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's full name."
+        },
+        "cpf": {
+          "type": "string",
+          "description": "The user's CPF (Brazilian individual taxpayer registry number)."
+        },
+        "casinoAccountId": {
+          "type": "string",
+          "description": "The user's ID for their casino account."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "cpf",
+        "casinoAccountId"
+      ]
+    },
+    "AdminAccount": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AdminAccount",
+      "type": "object",
+      "description": "Represents an administrator account with access to the dashboard.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the admin account."
+        },
+        "username": {
+          "type": "string",
+          "description": "The admin's username for login."
+        }
+      },
+      "required": [
+        "id",
+        "username"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/registered_users/{userId}",
+        "definition": {
+          "entityName": "RegisteredUser",
+          "schema": {
+            "$ref": "#/backend/entities/RegisteredUser"
+          },
+          "description": "Stores data for registered users. The 'userId' parameter corresponds to the Firebase Authentication UID, ensuring only the authenticated user can access their own data.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase Authentication UID of the registered user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/admin_accounts/{adminId}",
+        "definition": {
+          "entityName": "AdminAccount",
+          "schema": {
+            "$ref": "#/backend/entities/AdminAccount"
+          },
+          "description": "Stores administrator account details. This collection is only accessible to users with the admin role, verified by the existence of a document in the '/roles_admin/{uid}' collection.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique identifier for the admin account."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "AdminRole",
+          "schema": {
+            "$ref": "#/backend/entities/AdminAccount"
+          },
+          "description": "Collection used to store admin roles. The existence of a document with a user ID in this collection grants admin privileges.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase Authentication UID of the administrator."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "This design prioritizes security and scalability for the Jackpot Sign-Up application. It separates user registration data and admin account data into distinct collections. The `registered_users` collection stores the sign-up form data. The `admin_accounts` collection stores admin login information. Separate collections enforce Structural Segregation (Homogeneous Security Posture), simplifying security rules. This approach avoids mixing user data and admin data in a single collection, which could introduce complexity and potential security vulnerabilities. Since there is no ownership or collaborative data, Authorization Independence is less critical, but still, a simple path-based approach is used for registered users, and an existence check for admin roles. Path-Based ownership (`/registered_users/{userId}`) allows simple security rules based on `request.auth.uid`. The `admin_accounts` allows only admins to read and write, implemented via an existence check in the `/roles_admin/{uid}` collection. Finally, the structure supports the QAP principle ('Rules are not Filters') because list operations on `/registered_users` are inherently secure since access to documents within each user's path is controlled by their `uid`."
+  }
+}
