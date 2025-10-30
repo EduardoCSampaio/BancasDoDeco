@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { Button } from './ui/button';
-import { cn } from '@/lib/utils';
 import { Crown } from 'lucide-react';
-import { incrementRaffleCount } from '@/lib/actions';
+import { handleNewWinner } from '@/lib/actions';
+import type { User } from '@/lib/definitions';
 
 const colors = [
   '#FFC700', // Amarelo
@@ -17,13 +17,14 @@ const colors = [
   '#8A9A5B', // Verde Oliva
 ];
 
-export function Roulette({ participants }: { participants: string[] }) {
+export function Roulette({ participants }: { participants: User[] }) {
   const [spinning, setSpinning] = useState(false);
-  const [winner, setWinner] = useState<string | null>(null);
+  const [winner, setWinner] = useState<User | null>(null);
   const [rotation, setRotation] = useState(0);
 
+  const participantNames = participants.map((p) => p.name);
   const segmentAngle = participants.length > 0 ? 360 / participants.length : 360;
-  const spinDuration = 8000; // Aumentado para 8 segundos
+  const spinDuration = 8000;
 
   const spin = () => {
     if (spinning || participants.length === 0) return;
@@ -32,7 +33,9 @@ export function Roulette({ participants }: { participants: string[] }) {
     setSpinning(true);
 
     const winnerIndex = Math.floor(Math.random() * participants.length);
-    const spins = 10; // Mais voltas para criar suspense
+    const selectedWinner = participants[winnerIndex];
+
+    const spins = 10;
     const baseRotation = rotation - (rotation % 360);
     const targetAngle = 360 - winnerIndex * segmentAngle;
     const randomOffset = (Math.random() - 0.5) * segmentAngle * 0.8;
@@ -41,10 +44,10 @@ export function Roulette({ participants }: { participants: string[] }) {
     setRotation(totalRotation);
 
     setTimeout(() => {
-      setWinner(participants[winnerIndex]);
+      setWinner(selectedWinner);
       setSpinning(false);
-      incrementRaffleCount();
-    }, spinDuration); // Deve corresponder à duração da transição
+      handleNewWinner(selectedWinner);
+    }, spinDuration);
   };
 
   return (
@@ -64,7 +67,7 @@ export function Roulette({ participants }: { participants: string[] }) {
             transform: `rotate(${rotation}deg)` 
           }}
         >
-          {participants.map((name, index) => (
+          {participantNames.map((name, index) => (
             <div
               key={index}
               className="absolute w-1/2 h-1/2 top-0 left-1/2 origin-bottom-left flex items-center justify-center"
@@ -91,7 +94,7 @@ export function Roulette({ participants }: { participants: string[] }) {
             <h3 className="text-sm text-muted-foreground">O Vencedor é:</h3>
             <p className="text-4xl font-bold font-headline text-primary flex items-center gap-2">
               <Crown className="w-8 h-8 text-yellow-400" />
-              {winner}
+              {winner.name}
             </p>
           </div>
         )}

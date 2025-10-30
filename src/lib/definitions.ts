@@ -5,3 +5,7 @@ export type User = {
   casinoId: string;
   createdAt: Date;
 };
+
+export type Winner = User & {
+    wonAt: Date;
+}

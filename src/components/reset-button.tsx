@@ -55,7 +55,7 @@ export function ResetButton() {
     return (
         <AlertDialog>
             <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="w-64">
+                <Button variant="destructive">
                     <Trash2 className="mr-2 h-4 w-4" />
                     Resetar Inscrições
                 </Button>
@@ -65,7 +65,7 @@ export function ResetButton() {
                     <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                     <AlertDialogDescription>
                         Esta ação não pode ser desfeita. Isso irá limpar permanentemente
-                        a lista de todos os participantes atuais. A contagem de sorteios realizados não será afetada.
+                        a lista de todos os participantes atuais, mas os ganhadores anteriores serão mantidos no histórico. A contagem de sorteios realizados não será afetada.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

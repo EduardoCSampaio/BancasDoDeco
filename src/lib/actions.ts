@@ -2,9 +2,10 @@
 'use server';
 
 import { z } from 'zod';
-import { addUser, clearUsers, incrementRaffles } from './data';
+import { addUser, clearUsers, incrementRaffles, addWinner } from './data';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import type { User } from './definitions';
 
 const RegistrationSchema = z.object({
   name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres.' }),
@@ -98,17 +99,20 @@ export async function resetEntries() {
   try {
     await clearUsers();
     revalidatePath('/dashboard');
+    revalidatePath('/dashboard/roulette');
     return { success: true, message: 'As inscrições foram resetadas.' };
   } catch (error) {
     return { success: false, message: 'Falha ao resetar as inscrições.' };
   }
 }
 
-export async function incrementRaffleCount() {
+export async function handleNewWinner(winner: User) {
     try {
         await incrementRaffles();
-        revalidatePath('/dashboard');
+        await addWinner(winner);
+        revalidatePath('/dashboard/roulette');
+        revalidatePath('/dashboard/winners');
     } catch (error) {
-        console.error('Failed to increment raffle count:', error);
+        console.error('Failed to handle new winner:', error);
     }
 }

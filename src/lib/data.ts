@@ -1,4 +1,4 @@
-import type { User } from './definitions';
+import type { User, Winner } from './definitions';
 
 // Em uma aplicação real, isso seria um banco de dados como o Firestore.
 let users: User[] = [
@@ -8,6 +8,7 @@ let users: User[] = [
   { id: '4', name: 'Ana Souza', cpf: '123.456.789-00', casinoId: 'CASINO-004', createdAt: new Date('2023-10-04T09:15:00Z') },
   { id: '5', name: 'Carlos Pereira', cpf: '098.765.432-11', casinoId: 'CASINO-005', createdAt: new Date('2023-10-05T18:45:00Z') },
 ];
+let winners: Winner[] = [];
 
 let nextId = 6;
 let totalRaffles = 0;
@@ -28,6 +29,11 @@ export async function getUsers(): Promise<User[]> {
   return users.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
+export async function getUserByName(name: string): Promise<User | undefined> {
+    await new Promise(resolve => setTimeout(resolve, 50));
+    return users.find(user => user.name === name);
+}
+
 export async function addUser(data: { name: string; cpf: string; casinoId: string }): Promise<User> {
   await new Promise(resolve => setTimeout(resolve, 500));
   const newUser: User = {
@@ -43,4 +49,18 @@ export async function clearUsers(): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 200));
     users = [];
     nextId = 1;
+}
+
+export async function addWinner(user: User): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const newWinner: Winner = {
+        ...user,
+        wonAt: new Date(),
+    };
+    winners.unshift(newWinner);
+}
+
+export async function getWinners(): Promise<Winner[]> {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return winners.sort((a, b) => b.wonAt.getTime() - a.wonAt.getTime());
 }
