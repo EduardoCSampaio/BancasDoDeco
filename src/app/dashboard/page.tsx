@@ -11,7 +11,7 @@ export default async function DashboardPage() {
   const users = await getUsers();
 
   return (
-    <Card className="shadow-lg border-primary/20">
+    <Card className="shadow-lg border-primary/20 bg-card/80 backdrop-blur-sm">
       <CardHeader>
         <div className="flex items-center justify-between">
             <div className='flex items-center gap-3'>
@@ -21,7 +21,7 @@ export default async function DashboardPage() {
           <ResetButton />
         </div>
         <CardDescription>
-          Lista de todos os participantes inscritos.
+          Acompanhe e gerencie todos os participantes inscritos no sorteio.
         </CardDescription>
       </CardHeader>
       <CardContent>

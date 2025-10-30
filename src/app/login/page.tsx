@@ -12,7 +12,7 @@ function LoginButton() {
     const { pending } = useFormStatus();
 
     return (
-        <Button className="w-full bg-primary" aria-disabled={pending} disabled={pending}>
+        <Button className="w-full" aria-disabled={pending} disabled={pending}>
             {pending ? "Entrando..." : "Entrar"}
         </Button>
     );
@@ -24,7 +24,7 @@ export default function LoginPage() {
 
     return (
         <div className="w-full min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
-            <Card className="w-full max-w-sm shadow-xl">
+            <Card className="w-full max-w-sm shadow-xl bg-card/80 backdrop-blur-sm">
                 <CardHeader className="text-center">
                     <CardTitle className="font-headline text-3xl">Acesso Administrativo</CardTitle>
                     <CardDescription>Faça login para gerenciar os participantes.</CardDescription>

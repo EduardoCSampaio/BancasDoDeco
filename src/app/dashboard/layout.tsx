@@ -12,7 +12,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-gradient-to-br from-background via-secondary to-background min-h-screen">
+    <div className="bg-gradient-to-b from-background to-secondary/40 min-h-screen">
       <div className="container mx-auto py-8">
         <div className="flex flex-col items-center justify-center text-center mb-12">
             <h1 className="text-5xl font-bold font-headline text-primary">Painel do Sorteio</h1>

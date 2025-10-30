@@ -22,7 +22,7 @@ import { PartyPopperIcon } from 'lucide-react';
 
 const RegistrationSchema = z.object({
   name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres.' }),
-  cpf: z.string().refine((cpf) => /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf), {
+  cpf: z.string().refine((cpf) => /^d{3}.d{3}.d{3}-d{2}$/.test(cpf), {
     message: 'Formato de CPF inválido. Use XXX.XXX.XXX-XX.',
   }),
   casinoId: z.string().min(1, { message: 'ID da Conta Cassino é obrigatório.' }),

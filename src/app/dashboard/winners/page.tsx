@@ -23,20 +23,20 @@ export default async function WinnersPage() {
   const winners = await getWinners();
 
   return (
-    <Card className="shadow-lg border-primary/20">
+    <Card className="shadow-lg border-primary/20 bg-card/80 backdrop-blur-sm">
       <CardHeader>
         <div className="flex items-center gap-3">
-          <Trophy className="w-6 h-6 text-primary" />
-          <CardTitle className="font-headline text-3xl">Histórico de Ganhadores</CardTitle>
+          <Trophy className="w-6 h-6 text-accent" />
+          <CardTitle className="font-headline text-3xl">Galeria de Ganhadores</CardTitle>
         </div>
         <CardDescription>
-          Lista de todos os ganhadores dos sorteios anteriores.
+          Lista de todos os sortudos dos sorteios anteriores.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-96 w-full rounded-md border">
           <Table>
-            <TableHeader className="sticky top-0 bg-muted/50">
+            <TableHeader className="sticky top-0 bg-secondary">
               <TableRow>
                 <TableHead className="font-bold">Nome</TableHead>
                 <TableHead className="font-bold">CPF</TableHead>
