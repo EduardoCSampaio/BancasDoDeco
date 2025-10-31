@@ -3,16 +3,10 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import type { User } from './definitions';
 import {
-  doc,
-  updateDoc,
   collection,
   writeBatch,
-  runTransaction,
-  addDoc,
   getDocs,
-  serverTimestamp,
   Firestore,
 } from 'firebase/firestore';
 
@@ -86,50 +80,5 @@ export async function resetEntries(db: Firestore) {
   } catch (error) {
     console.error('Failed to reset entries:', error);
     return { success: false, message: 'Falha ao resetar as inscrições.' };
-  }
-}
-
-export async function handleNewWinner(db: Firestore, winner: User) {
-  // db will be passed from client
-  try {
-    const statsDocRef = doc(db, 'stats', 'raffle');
-    await runTransaction(db, async (transaction) => {
-      const sfDoc = await transaction.get(statsDocRef);
-      if (!sfDoc.exists()) {
-        transaction.set(statsDocRef, { totalRaffles: 1 });
-      } else {
-        const newTotal = (sfDoc.data()?.totalRaffles || 0) + 1;
-        transaction.update(statsDocRef, { totalRaffles: newTotal });
-      }
-    });
-
-    const winnersCol = collection(db, 'winners');
-    await addDoc(winnersCol, {
-      ...winner,
-      wonAt: serverTimestamp(),
-      status: 'Pendente',
-    });
-
-    revalidatePath('/dashboard/roulette');
-    revalidatePath('/dashboard/winners');
-  } catch (error) {
-    console.error('Failed to handle new winner:', error);
-  }
-}
-
-export async function updateWinnerStatusAction(
-  db: Firestore,
-  id: string,
-  status: 'Pendente' | 'Pix Enviado'
-) {
-  // db will be passed from client
-  try {
-    const winnerRef = doc(db, 'winners', id);
-    await updateDoc(winnerRef, { status });
-    revalidatePath('/dashboard/winners');
-    return { success: true, message: 'Status atualizado com sucesso.' };
-  } catch (error) {
-    console.error('Failed to update winner status:', error);
-    return { success: false, message: 'Falha ao atualizar o status.' };
   }
 }

@@ -4,11 +4,11 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { Crown } from 'lucide-react';
-import { handleNewWinner } from '@/lib/actions';
 import type { User } from '@/lib/definitions';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@/hooks/use-window-size';
 import { useFirestore } from '@/firebase';
+import { doc, runTransaction, collection, addDoc, serverTimestamp, Firestore } from 'firebase/firestore';
 
 
 const colors = [
@@ -25,6 +25,31 @@ const colors = [
   '#B565A7', // Lilac
   '#009B77', // Sea Green
 ];
+
+async function handleNewWinner(db: Firestore, winner: User) {
+  try {
+    const statsDocRef = doc(db, 'stats', 'raffle');
+    await runTransaction(db, async (transaction) => {
+      const sfDoc = await transaction.get(statsDocRef);
+      if (!sfDoc.exists()) {
+        transaction.set(statsDocRef, { totalRaffles: 1 });
+      } else {
+        const newTotal = (sfDoc.data()?.totalRaffles || 0) + 1;
+        transaction.update(statsDocRef, { totalRaffles: newTotal });
+      }
+    });
+
+    const winnersCol = collection(db, 'winners');
+    await addDoc(winnersCol, {
+      ...winner,
+      wonAt: serverTimestamp(),
+      status: 'Pendente',
+    });
+
+  } catch (error) {
+    console.error('Failed to handle new winner:', error);
+  }
+}
 
 
 export function Roulette({ participants }: { participants: User[] }) {

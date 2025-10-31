@@ -8,12 +8,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { updateWinnerStatusAction } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { Winner } from '@/lib/definitions';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import { useFirestore } from '@/firebase';
+import { doc, updateDoc, Firestore } from 'firebase/firestore';
+
+
+async function updateWinnerStatus(
+  db: Firestore,
+  id: string,
+  status: 'Pendente' | 'Pix Enviado'
+) {
+  try {
+    const winnerRef = doc(db, 'winners', id);
+    await updateDoc(winnerRef, { status });
+    return { success: true, message: 'Status atualizado com sucesso.' };
+  } catch (error) {
+    console.error('Failed to update winner status:', error);
+    return { success: false, message: 'Falha ao atualizar o status.' };
+  }
+}
 
 
 export function WinnerStatusSelect({ winner }: { winner: Winner }) {
@@ -25,7 +41,7 @@ export function WinnerStatusSelect({ winner }: { winner: Winner }) {
             toast({ title: 'Erro', description: 'Firestore não está disponível.', variant: 'destructive' });
             return;
         }
-        const result = await updateWinnerStatusAction(firestore, winner.id, newStatus);
+        const result = await updateWinnerStatus(firestore, winner.id, newStatus);
         if (result.success) {
             toast({
                 title: 'Status Atualizado',
