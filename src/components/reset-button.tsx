@@ -1,9 +1,7 @@
 
 'use client';
 
-import { useFormStatus } from 'react-dom';
 import { Button } from './ui/button';
-import { resetEntries } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import {
     AlertDialog,
@@ -18,22 +16,36 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Trash2 } from 'lucide-react';
 import { useFirestore } from '@/firebase';
+import {
+    collection,
+    writeBatch,
+    getDocs,
+    Firestore,
+  } from 'firebase/firestore';
+import { revalidatePath } from 'next/cache';
 
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <AlertDialogAction asChild>
-            <Button
-                type="submit"
-                variant="destructive"
-                disabled={pending}
-                aria-disabled={pending}
-            >
-                {pending ? "Resetando..." : "Sim, Resetar"}
-            </Button>
-        </AlertDialogAction>
-    )
-}
+async function resetEntries(db: Firestore) {
+    try {
+      const usersCol = collection(db, 'user_registrations');
+      const querySnapshot = await getDocs(usersCol);
+      if (querySnapshot.empty) {
+        return { success: true, message: 'Nenhuma inscrição para resetar.' };
+      }
+  
+      const batch = writeBatch(db);
+      querySnapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+  
+      // Client-side revalidation is not a concept like server-side revalidatePath.
+      // The UI will update automatically due to the onSnapshot listener in the dashboard page.
+      return { success: true, message: 'As inscrições foram resetadas.' };
+    } catch (error) {
+      console.error('Failed to reset entries:', error);
+      return { success: false, message: 'Falha ao resetar as inscrições.' };
+    }
+  }
 
 export function ResetButton() {
     const { toast } = useToast();
@@ -77,9 +89,11 @@ export function ResetButton() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <Button onClick={handleReset} variant="destructive">
-                        Sim, Resetar
-                    </Button>
+                    <AlertDialogAction onClick={handleReset} asChild>
+                        <Button variant="destructive">
+                            Sim, Resetar
+                        </Button>
+                    </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
