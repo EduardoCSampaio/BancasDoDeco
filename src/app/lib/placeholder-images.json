@@ -3,7 +3,7 @@
     {
       "id": "prize-image",
       "description": "Uma imagem representando o prêmio principal do sorteio.",
-      "imageUrl": "https://picsum.photos/seed/prize/600/400",
+      "imageUrl": "https://flic.kr/p/2nejJQX",
       "imageHint": "prêmio produto"
     }
   ]
