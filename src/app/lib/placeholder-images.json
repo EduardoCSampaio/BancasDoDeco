@@ -1,10 +1,3 @@
 {
-  "placeholderImages": [
-    {
-      "id": "prize-image",
-      "description": "Uma imagem representando o prêmio principal do sorteio.",
-      "imageUrl": "https://imgur.com/IJZ4Ibx",
-      "imageHint": "prêmio produto"
-    }
-  ]
+  "placeholderImages": []
 }

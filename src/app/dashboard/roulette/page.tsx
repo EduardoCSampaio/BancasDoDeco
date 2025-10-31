@@ -2,12 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useFirestore } from '@/firebase';
-import { collection, doc, query, onSnapshot } from 'firebase/firestore';
+import { collection, doc, query, onSnapshot, deleteDoc, runTransaction, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Roulette } from '@/components/roulette';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Ticket, Trophy } from 'lucide-react';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import type { User } from '@/lib/definitions';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -22,18 +21,44 @@ function RouletteSkeleton() {
     )
 }
 
+async function handleNewWinner(db: any, winner: User) {
+    try {
+      // 1. Add to permanent winners collection and increment stats
+      const statsDocRef = doc(db, 'stats', 'raffle');
+      await runTransaction(db, async (transaction) => {
+        const sfDoc = await transaction.get(statsDocRef);
+        if (!sfDoc.exists()) {
+          transaction.set(statsDocRef, { totalRaffles: 1 });
+        } else {
+          const newTotal = (sfDoc.data()?.totalRaffles || 0) + 1;
+          transaction.update(statsDocRef, { totalRaffles: newTotal });
+        }
+      });
+  
+      const winnersCol = collection(db, 'winners');
+      await addDoc(winnersCol, {
+        ...winner,
+        wonAt: serverTimestamp(),
+        status: 'Pendente',
+      });
+  
+      // 2. Remove winner from the active participants list
+      const userRegistrationRef = doc(db, 'user_registrations', winner.id);
+      await deleteDoc(userRegistrationRef);
+  
+    } catch (error) {
+      console.error('Failed to handle new winner:', error);
+    }
+  }
+
 export default function RoulettePage() {
     const [users, setUsers] = useState<User[]>([]);
     const [totalRaffles, setTotalRaffles] = useState(0);
     const [loading, setLoading] = useState(true);
     const firestore = useFirestore();
 
-    const prizeImage = PlaceHolderImages.find(p => p.id === 'prize-image');
-
     useEffect(() => {
         if (!firestore) return;
-        
-        setLoading(true);
 
         // Get Users
         const usersCol = collection(firestore, 'user_registrations');
@@ -79,20 +104,18 @@ export default function RoulettePage() {
                     <CardDescription>Gire a roleta para selecionar um vencedor aleatório.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {prizeImage && (
-                        <div className="relative h-64 w-full rounded-lg overflow-hidden mb-8 shadow-inner">
-                            <Image
-                                src={prizeImage.imageUrl}
-                                alt={prizeImage.description}
-                                fill
-                                style={{ objectFit: 'cover' }}
-                                data-ai-hint={prizeImage.imageHint}
-                            />
-                        </div>
-                    )}
+                    <div className="relative h-64 w-full rounded-lg overflow-hidden mb-8 shadow-inner">
+                        <Image
+                            src="/prize-image.png"
+                            alt="Prêmio principal do sorteio"
+                            fill
+                            style={{ objectFit: 'cover' }}
+                            data-ai-hint="prêmio produto"
+                        />
+                    </div>
                     {loading ? <RouletteSkeleton /> : (
                         <>
-                            <Roulette participants={users} />
+                            <Roulette participants={users} onNewWinner={(winner) => handleNewWinner(firestore, winner)} />
                             <div className="mt-8 flex flex-col items-center gap-4">
                                 <div className="flex items-center gap-2 text-lg font-semibold text-muted-foreground">
                                     <Trophy className="w-6 h-6 text-accent" />

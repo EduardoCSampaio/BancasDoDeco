@@ -7,8 +7,6 @@ import { Crown } from 'lucide-react';
 import type { User } from '@/lib/definitions';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@/hooks/use-window-size';
-import { useFirestore } from '@/firebase';
-import { doc, runTransaction, collection, addDoc, serverTimestamp, Firestore, deleteDoc } from 'firebase/firestore';
 
 
 const colors = [
@@ -26,51 +24,19 @@ const colors = [
   '#009B77', // Sea Green
 ];
 
-async function handleNewWinner(db: Firestore, winner: User) {
-  try {
-    // 1. Add to permanent winners collection and increment stats
-    const statsDocRef = doc(db, 'stats', 'raffle');
-    await runTransaction(db, async (transaction) => {
-      const sfDoc = await transaction.get(statsDocRef);
-      if (!sfDoc.exists()) {
-        transaction.set(statsDocRef, { totalRaffles: 1 });
-      } else {
-        const newTotal = (sfDoc.data()?.totalRaffles || 0) + 1;
-        transaction.update(statsDocRef, { totalRaffles: newTotal });
-      }
-    });
 
-    const winnersCol = collection(db, 'winners');
-    await addDoc(winnersCol, {
-      ...winner,
-      wonAt: serverTimestamp(),
-      status: 'Pendente',
-    });
-
-    // 2. Remove winner from the active participants list
-    const userRegistrationRef = doc(db, 'user_registrations', winner.id);
-    await deleteDoc(userRegistrationRef);
-
-
-  } catch (error) {
-    console.error('Failed to handle new winner:', error);
-  }
-}
-
-
-export function Roulette({ participants }: { participants: User[] }) {
+export function Roulette({ participants, onNewWinner }: { participants: User[], onNewWinner: (winner: User) => void }) {
   const [spinning, setSpinning] = useState(false);
   const [winner, setWinner] = useState<User | null>(null);
   const [rotation, setRotation] = useState(0);
   const { width, height } = useWindowSize();
-  const firestore = useFirestore();
 
   const participantNames = participants.map((p) => p.name);
   const segmentAngle = participants.length > 0 ? 360 / participants.length : 360;
   const spinDuration = 10000; // Slower spin: 10 seconds
 
   const spin = () => {
-    if (spinning || participants.length === 0 || !firestore) return;
+    if (spinning || participants.length === 0) return;
 
     setWinner(null);
     setSpinning(true);
@@ -89,7 +55,7 @@ export function Roulette({ participants }: { participants: User[] }) {
     setTimeout(() => {
       setWinner(selectedWinner);
       setSpinning(false);
-      handleNewWinner(firestore, selectedWinner);
+      onNewWinner(selectedWinner);
     }, spinDuration);
   };
 
