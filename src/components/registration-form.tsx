@@ -1,18 +1,24 @@
 
 'use client';
 
-import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useEffect, useRef } from 'react';
-import { registerUser, type RegistrationState } from '@/lib/actions';
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  query,
+  where,
+  getDocs,
+  Firestore,
+} from 'firebase/firestore';
+
 import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -21,7 +27,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const RegistrationSchema = z.object({
   name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres.' }),
@@ -31,22 +36,17 @@ const RegistrationSchema = z.object({
   casinoId: z.string().min(1, { message: 'ID da Conta Cassino é obrigatório.' }),
 });
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-lg font-bold py-6" disabled={pending}>
-      {pending ? 'Confirmando...' : 'Confirmar Inscrição'}
-    </Button>
-  );
+async function isCpfAlreadyRegistered(db: Firestore, cpf: string) {
+  const usersCol = collection(db, 'user_registrations');
+  const q = query(usersCol, where('cpf', '==', cpf));
+  const querySnapshot = await getDocs(q);
+  return !querySnapshot.empty;
 }
 
 export function RegistrationForm() {
   const { toast } = useToast();
-  const formRef = useRef<HTMLFormElement>(null);
   const firestore = useFirestore();
-  
-  const initialState: RegistrationState = { message: null, errors: {}, success: false };
-  const [state, dispatch] = useActionState(registerUser, initialState);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof RegistrationSchema>>({
     resolver: zodResolver(RegistrationSchema),
@@ -60,60 +60,60 @@ export function RegistrationForm() {
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 11);
     form.setValue('cpf', value, { shouldValidate: true });
-    return value;
   };
   
-  useEffect(() => {
-    if (state.errors?.cpf) {
-        form.setError('cpf', { type: 'manual', message: state.errors.cpf[0] });
+  const onSubmit = async (data: z.infer<typeof RegistrationSchema>) => {
+    if (!firestore) {
+      toast({
+        title: 'Erro de Conexão',
+        description: 'Não foi possível conectar ao banco de dados. Tente novamente.',
+        variant: 'destructive',
+      });
+      return;
     }
-    if (state.errors?.name) {
-        form.setError('name', { type: 'manual', message: state.errors.name[0] });
-    }
-    if (state.errors?.casinoId) {
-        form.setError('casinoId', { type: 'manual', message: state.errors.casinoId[0] });
-    }
-  }, [state.errors, form]);
-
-
-  useEffect(() => {
-    // Handle server action result
-    if (!state) return;
-
-    if (state.success && state.validatedData && firestore) {
-      // Data is valid, now write to Firestore on the client
-      const usersCol = collection(firestore, 'user_registrations');
-      addDoc(usersCol, {
-        ...state.validatedData,
-        createdAt: serverTimestamp(),
-      }).then(() => {
-        toast({
-          title: 'Sucesso!',
-          description: "Cadastro realizado com sucesso!",
-        });
-        form.reset();
-        formRef.current?.reset();
-      }).catch((error) => {
-        console.error("Error writing to Firestore: ", error);
+    
+    setIsSubmitting(true);
+    
+    try {
+      const cpfExists = await isCpfAlreadyRegistered(firestore, data.cpf);
+      if (cpfExists) {
         toast({
           title: 'Erro de Inscrição',
-          description: "Falha ao salvar no banco de dados.",
+          description: 'Este CPF já foi cadastrado para o sorteio atual.',
           variant: 'destructive',
         });
+        form.setError('cpf', { message: 'Este CPF já foi cadastrado.' });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      const usersCol = collection(firestore, 'user_registrations');
+      await addDoc(usersCol, {
+        ...data,
+        createdAt: serverTimestamp(),
       });
-    } else if (!state.success && state.message) {
-      // Validation failed or other server error
-       toast({
-            title: 'Erro de Inscrição',
-            description: state.message,
-            variant: 'destructive',
-        });
+      
+      toast({
+        title: 'Sucesso!',
+        description: 'Cadastro realizado com sucesso!',
+      });
+      form.reset();
+      
+    } catch (error) {
+      console.error("Error during registration: ", error);
+      toast({
+        title: 'Erro de Inscrição',
+        description: 'Ocorreu uma falha ao realizar o cadastro. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+        setIsSubmitting(false);
     }
-  }, [state, firestore, toast, form]);
+  };
 
   return (
     <Form {...form}>
-      <form ref={formRef} action={dispatch} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="name"
@@ -137,7 +137,7 @@ export function RegistrationForm() {
                 <Input 
                   placeholder="12345678900" 
                   {...field} 
-                  onChange={(e) => field.onChange(handleCpfChange(e))}
+                  onChange={handleCpfChange}
                 />
               </FormControl>
               <FormMessage />
@@ -157,7 +157,9 @@ export function RegistrationForm() {
             </FormItem>
           )}
         />
-        <SubmitButton />
+        <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-lg font-bold py-6" disabled={isSubmitting}>
+            {isSubmitting ? 'Confirmando...' : 'Confirmar Inscrição'}
+        </Button>
       </form>
     </Form>
   );
