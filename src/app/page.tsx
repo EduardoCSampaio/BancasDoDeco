@@ -17,8 +17,8 @@ export default function Home() {
             />
         </div>
         <CardHeader className="text-center pt-6">
-          <CardTitle className="font-headline text-4xl text-primary">Participe do Sorteio VIP</CardTitle>
-          <CardDescription className="text-muted-foreground pt-2 text-lg">Cadastre-se para concorrer a prêmios incríveis.</CardDescription>
+          <CardTitle className="font-headline text-4xl text-primary">Banca do PRUUUUU</CardTitle>
+          <CardDescription className="text-muted-foreground pt-2 text-lg">Cadastre-se para concorrer a melhor banquinha da twitch.</CardDescription>
         </CardHeader>
         <CardContent>
           <RegistrationForm />
