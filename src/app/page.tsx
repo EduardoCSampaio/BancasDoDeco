@@ -15,6 +15,7 @@ export default function Home() {
                     src={prizeImage.imageUrl} 
                     alt={prizeImage.description}
                     fill
+                    priority
                     style={{ objectFit: 'cover' }}
                     data-ai-hint={prizeImage.imageHint}
                 />

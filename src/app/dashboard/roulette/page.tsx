@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -33,6 +32,8 @@ export default function RoulettePage() {
 
     useEffect(() => {
         if (!firestore) return;
+        
+        setLoading(true);
 
         // Get Users
         const usersCol = collection(firestore, 'user_registrations');
