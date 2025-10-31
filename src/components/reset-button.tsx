@@ -76,7 +76,6 @@ export function ResetButton() {
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    {/* The form isn't ideal here anymore but good enough for now */}
                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                     <Button onClick={handleReset} variant="destructive">
                         Sim, Resetar

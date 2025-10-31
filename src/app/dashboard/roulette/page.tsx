@@ -36,7 +36,7 @@ export default function RoulettePage() {
         setLoading(true);
 
         // Get Users
-        const usersCol = collection(firestore, 'registered_users');
+        const usersCol = collection(firestore, 'user_registrations');
         const usersQuery = query(usersCol);
         const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
             const usersData = snapshot.docs.map((doc) => ({

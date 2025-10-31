@@ -11,13 +11,12 @@ service cloud.firestore {
 
     function isAdmin() {
       // For now, any signed-in user is considered an admin.
-      // In a production environment, you should implement a more robust role check,
-      // for example, by checking for a custom claim or a document in a specific collection.
-      // Example: return get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.isAdmin == true;
+      // In a production environment, you should implement a more robust role check.
       return isSignedIn();
     }
 
-    match /registered_users/{userId} {
+    // Rules for the user registrations collection
+    match /user_registrations/{registrationId} {
       // Allow creation by anyone (public registration form)
       allow create: if true;
       
@@ -26,10 +25,11 @@ service cloud.firestore {
     }
     
     // Admins can list all registered users
-    match /registered_users/{userId} {
+    match /user_registrations/{registrationId} {
         allow list: if isAdmin();
     }
 
+    // Rules for the winners collection
     match /winners/{winnerId} {
         // Anyone can read the winners list
         allow read, list: if true;
@@ -38,6 +38,7 @@ service cloud.firestore {
         allow create, update, delete: if isAdmin();
     }
 
+    // Rules for the stats collection
     match /stats/{statId} {
         // Anyone can read stats
         allow read: if true;
@@ -46,7 +47,7 @@ service cloud.firestore {
         allow write: if isAdmin();
     }
     
-    // This is just a placeholder and can be secured further if needed
+    // Rules for user profiles
     match /users/{userId} {
         allow read, write: if request.auth.uid == userId;
     }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -36,7 +37,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!firestore) return;
 
-    const usersCol = collection(firestore, 'registered_users');
+    const usersCol = collection(firestore, 'user_registrations');
     const q = query(usersCol);
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {

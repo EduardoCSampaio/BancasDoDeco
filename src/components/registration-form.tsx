@@ -82,7 +82,7 @@ export function RegistrationForm() {
 
     if (state.success && state.validatedData && firestore) {
       // Data is valid, now write to Firestore on the client
-      const usersCol = collection(firestore, 'registered_users');
+      const usersCol = collection(firestore, 'user_registrations');
       addDoc(usersCol, {
         ...state.validatedData,
         createdAt: serverTimestamp(),

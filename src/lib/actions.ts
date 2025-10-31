@@ -68,7 +68,7 @@ export async function registerUser(
 export async function resetEntries(db: Firestore) {
   // db will be passed from client
   try {
-    const usersCol = collection(db, 'registered_users');
+    const usersCol = collection(db, 'user_registrations');
     const querySnapshot = await getDocs(usersCol);
     if (querySnapshot.empty) {
       return { success: true, message: 'Nenhuma inscrição para resetar.' };
