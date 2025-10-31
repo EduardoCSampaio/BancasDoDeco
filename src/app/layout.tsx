@@ -44,16 +44,6 @@ export default function RootLayout({
       >
         <FirebaseClientProvider>
           <div className="relative flex min-h-screen flex-col">
-            <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <div className="container flex h-16 items-center justify-center">
-                <div className="flex items-center space-x-2">
-                  <Crown className="h-8 w-8 text-accent" />
-                  <span className="font-headline text-xl font-bold sm:inline-block">
-                    Sorteio VIP
-                  </span>
-                </div>
-              </div>
-            </header>
             <main className="flex-1">{children}</main>
           </div>
           <Toaster />
