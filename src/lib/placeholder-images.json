@@ -1,3 +1,16 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "prize-image",
+      "description": "Uma imagem representando o prêmio principal do sorteio.",
+      "imageUrl": "https://images.unsplash.com/photo-1643625720564-bc9ce18936b1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwciVDMyVBQW1pbyUyMHByb2R1dG98ZW58MHx8fHwxNzYxODczODI4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "prêmio produto"
+    },
+    {
+      "id": "secondary-prize-image",
+      "description": "Uma imagem para um prêmio secundário.",
+      "imageUrl": "https://picsum.photos/seed/secondary-prize/600/400",
+      "imageHint": "presente surpresa"
+    }
+  ]
 }
