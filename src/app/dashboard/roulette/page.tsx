@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useFirestore } from '@/firebase';
-import { collection, doc, getDoc, query, onSnapshot } from 'firebase/firestore';
+import { collection, doc, query, onSnapshot } from 'firebase/firestore';
 import { Roulette } from '@/components/roulette';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Ticket, Trophy } from 'lucide-react';
@@ -33,7 +33,6 @@ export default function RoulettePage() {
 
     useEffect(() => {
         if (!firestore) return;
-        setLoading(true);
 
         // Get Users
         const usersCol = collection(firestore, 'user_registrations');
@@ -47,9 +46,7 @@ export default function RoulettePage() {
             
             usersData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
             setUsers(usersData);
-            if(loading){ // Only stop loading once users are loaded initially
-                setLoading(false);
-            }
+            setLoading(false);
         }, (error) => {
             console.error("Failed to fetch users:", error);
             setLoading(false);
@@ -68,7 +65,7 @@ export default function RoulettePage() {
             unsubscribeUsers();
             unsubscribeStats();
         }
-    }, [firestore, loading]);
+    }, [firestore]);
 
     return (
         <div className="flex justify-center">
