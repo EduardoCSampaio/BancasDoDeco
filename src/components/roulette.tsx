@@ -8,7 +8,7 @@ import type { User } from '@/lib/definitions';
 import Confetti from 'react-confetti';
 import { useWindowSize } from '@/hooks/use-window-size';
 import { useFirestore } from '@/firebase';
-import { doc, runTransaction, collection, addDoc, serverTimestamp, Firestore } from 'firebase/firestore';
+import { doc, runTransaction, collection, addDoc, serverTimestamp, Firestore, deleteDoc } from 'firebase/firestore';
 
 
 const colors = [
@@ -28,6 +28,7 @@ const colors = [
 
 async function handleNewWinner(db: Firestore, winner: User) {
   try {
+    // 1. Add to permanent winners collection and increment stats
     const statsDocRef = doc(db, 'stats', 'raffle');
     await runTransaction(db, async (transaction) => {
       const sfDoc = await transaction.get(statsDocRef);
@@ -45,6 +46,11 @@ async function handleNewWinner(db: Firestore, winner: User) {
       wonAt: serverTimestamp(),
       status: 'Pendente',
     });
+
+    // 2. Remove winner from the active participants list
+    const userRegistrationRef = doc(db, 'user_registrations', winner.id);
+    await deleteDoc(userRegistrationRef);
+
 
   } catch (error) {
     console.error('Failed to handle new winner:', error);
