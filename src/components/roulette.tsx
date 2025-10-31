@@ -58,6 +58,16 @@ export function Roulette({ participants, onNewWinner }: { participants: User[], 
       onNewWinner(selectedWinner);
     }, spinDuration);
   };
+  
+  const getClipPath = (angle: number) => {
+    const tan = Math.tan(angle * (Math.PI / 180));
+    if (angle > 90) {
+      // For angles > 90, we need a different polygon shape
+      return `polygon(50% 50%, 0 0, 0 100%)`;
+    }
+    return `polygon(50% 50%, 100% 0, 100% ${50 - 50 * tan}%)`;
+  };
+
 
   return (
     <div className="flex flex-col items-center justify-center gap-8 p-4 rounded-lg ">
@@ -71,29 +81,35 @@ export function Roulette({ participants, onNewWinner }: { participants: User[], 
             aria-hidden="true"
         />
         <div
-          className="relative w-full h-full rounded-full border-8 border-primary/50 shadow-2xl transition-transform ease-[cubic-bezier(0.25,1,0.5,1)]"
+          className="relative w-full h-full rounded-full border-8 border-primary/50 shadow-2xl transition-transform ease-[cubic-bezier(0.25,1,0.5,1)] overflow-hidden"
           style={{ 
             transitionDuration: `${spinDuration}ms`,
             transform: `rotate(${rotation}deg)` 
           }}
         >
           {participantNames.map((name, index) => (
-            <div
-              key={index}
-              className="absolute w-1/2 h-1/2 top-0 left-1/2 origin-bottom-left flex items-center justify-center"
-              style={{
-                transform: `rotate(${index * segmentAngle}deg)`,
-                clipPath: `polygon(0 0, 100% 0, 100% 2px, ${100 - (Math.tan((segmentAngle / 2) * (Math.PI / 180)) * 100)}% 100%, 2px 100%)`,
-                backgroundColor: colors[index % colors.length],
-              }}
-            >
-              <span
-                className="relative text-sm font-bold text-black/70 -translate-y-1/3 transform -rotate-90 origin-center whitespace-nowrap"
-                style={{ transform: `translateY(-50%) rotate(${segmentAngle / 2 - 90}deg)` }}
-              >
-                {name.split(' ')[0]}
-              </span>
-            </div>
+             <div
+             key={index}
+             className="absolute w-full h-full"
+             style={{
+               transform: `rotate(${index * segmentAngle}deg)`,
+               clipPath: `polygon(50% 50%, ${50 + 50 * Math.tan(segmentAngle/2 * Math.PI/180)}% 0, 50% 0)`
+             }}
+           >
+             <div
+               className="absolute w-full h-full"
+               style={{
+                 backgroundColor: colors[index % colors.length],
+                 transform: `rotate(${segmentAngle/2}deg)`,
+               }}
+             >
+                <span
+                  className="absolute left-1/2 -translate-x-1/2 top-4 text-sm font-bold text-black/70 origin-center whitespace-nowrap"
+                >
+                  {name.split(' ')[0]}
+                </span>
+             </div>
+           </div>
           ))}
         </div>
       </div>
