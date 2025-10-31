@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from './ui/button';
 import { Crown } from 'lucide-react';
 import type { User } from '@/lib/definitions';
@@ -31,9 +31,26 @@ export function Roulette({ participants, onNewWinner }: { participants: User[], 
   const [rotation, setRotation] = useState(0);
   const { width, height } = useWindowSize();
 
-  const participantNames = participants.map((p) => p.name);
   const segmentAngle = participants.length > 0 ? 360 / participants.length : 360;
   const spinDuration = 10000; // Slower spin: 10 seconds
+
+  const conicGradient = useMemo(() => {
+    if (participants.length === 0) return 'radial-gradient(circle, #E5E7EB, #E5E7EB)';
+    
+    let gradient = 'conic-gradient(';
+    let currentAngle = 0;
+    for (let i = 0; i < participants.length; i++) {
+        const color = colors[i % colors.length];
+        gradient += `${color} ${currentAngle}deg ${currentAngle + segmentAngle}deg`;
+        currentAngle += segmentAngle;
+        if (i < participants.length - 1) {
+            gradient += ', ';
+        }
+    }
+    gradient += ')';
+    return gradient;
+  }, [participants, segmentAngle]);
+
 
   const spin = () => {
     if (spinning || participants.length === 0) return;
@@ -59,15 +76,6 @@ export function Roulette({ participants, onNewWinner }: { participants: User[], 
     }, spinDuration);
   };
   
-  const getClipPath = (angle: number) => {
-    const tan = Math.tan(angle * (Math.PI / 180));
-    if (angle > 90) {
-      // For angles > 90, we need a different polygon shape
-      return `polygon(50% 50%, 0 0, 0 100%)`;
-    }
-    return `polygon(50% 50%, 100% 0, 100% ${50 - 50 * tan}%)`;
-  };
-
 
   return (
     <div className="flex flex-col items-center justify-center gap-8 p-4 rounded-lg ">
@@ -83,34 +91,28 @@ export function Roulette({ participants, onNewWinner }: { participants: User[], 
         <div
           className="relative w-full h-full rounded-full border-8 border-primary/50 shadow-2xl transition-transform ease-[cubic-bezier(0.25,1,0.5,1)] overflow-hidden"
           style={{ 
-            transitionDuration: `${spinDuration}ms`,
+            transitionDuration: spinning ? `${spinDuration}ms` : '0ms',
             transform: `rotate(${rotation}deg)` 
           }}
         >
-          {participantNames.map((name, index) => (
-             <div
-             key={index}
-             className="absolute w-full h-full"
-             style={{
-               transform: `rotate(${index * segmentAngle}deg)`,
-               clipPath: `polygon(50% 50%, ${50 + 50 * Math.tan(segmentAngle/2 * Math.PI/180)}% 0, 50% 0)`
-             }}
-           >
-             <div
-               className="absolute w-full h-full"
-               style={{
-                 backgroundColor: colors[index % colors.length],
-                 transform: `rotate(${segmentAngle/2}deg)`,
-               }}
-             >
-                <span
-                  className="absolute left-1/2 -translate-x-1/2 top-4 text-sm font-bold text-black/70 origin-center whitespace-nowrap"
-                >
-                  {name.split(' ')[0]}
-                </span>
-             </div>
-           </div>
-          ))}
+            <div 
+                className="absolute w-full h-full rounded-full"
+                style={{ background: conicGradient }}
+            />
+             {participants.map((participant, index) => {
+                const angle = (index * segmentAngle) + (segmentAngle / 2);
+                return (
+                    <div
+                        key={index}
+                        className="absolute w-full h-full flex justify-center"
+                        style={{ transform: `rotate(${angle}deg)` }}
+                    >
+                        <span className="text-sm font-bold text-black/70 mt-4 origin-center whitespace-nowrap transform -rotate-90">
+                           {participant.name.split(' ')[0]}
+                        </span>
+                    </div>
+                )
+             })}
         </div>
       </div>
 
