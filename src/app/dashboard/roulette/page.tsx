@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useFirestore } from '@/firebase';
-import { collection, doc, query, onSnapshot, deleteDoc, runTransaction, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, query, onSnapshot, deleteDoc, runTransaction, addDoc, serverTimestamp, Firestore } from 'firebase/firestore';
 import { Roulette } from '@/components/roulette';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Ticket, Trophy } from 'lucide-react';
@@ -22,7 +22,13 @@ function RouletteSkeleton() {
     )
 }
 
-async function handleNewWinner(db: any, winner: User) {
+async function handleNewWinner(db: Firestore, winner: User) {
+    if (!winner || !winner.id) {
+        console.error("Tentativa de processar um vencedor inválido:", winner);
+        // Idealmente, notificar o usuário com um toast.
+        return;
+    }
+
     try {
       // 1. Add to permanent winners collection and increment stats
       const statsDocRef = doc(db, 'stats', 'raffle');
@@ -37,8 +43,10 @@ async function handleNewWinner(db: any, winner: User) {
       });
   
       const winnersCol = collection(db, 'winners');
+      // Remove o 'id' do objeto antes de salvar, pois ele já é o ID do documento
+      const { id, ...winnerData } = winner;
       await addDoc(winnersCol, {
-        ...winner,
+        ...winnerData,
         wonAt: serverTimestamp(),
         status: 'Pendente',
       });
@@ -48,7 +56,7 @@ async function handleNewWinner(db: any, winner: User) {
       await deleteDoc(userRegistrationRef);
   
     } catch (error) {
-      console.error('Failed to handle new winner:', error);
+      console.error('Falha ao processar novo vencedor:', error);
     }
   }
 
@@ -69,7 +77,6 @@ export default function RoulettePage() {
                 const data = doc.data();
                 return {
                     id: doc.id,
-                    // Handle old data structure with 'name' and new with 'twitchNick'
                     twitchNick: data.twitchNick || data.name || '',
                     cpf: data.cpf,
                     casinoId: data.casinoId || data.casinoAccountId,
