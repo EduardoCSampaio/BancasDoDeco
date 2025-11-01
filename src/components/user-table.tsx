@@ -51,7 +51,7 @@ export function UserTable({ users }: { users: User[] }) {
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.twitchNick}</TableCell>
                   <TableCell>{user.cpf}</TableCell>
-                  <TableCell>{user.casinoId}</TableCell>
+                  <TableCell>{user.casinoAccountId}</TableCell>
                   <TableCell>{user.pixKeyType === 'cpf' ? `CPF: ${user.cpf}`: user.pixKey}</TableCell>
                   <TableCell className="text-right">
                     {user.createdAt.toLocaleDateString('pt-BR')}

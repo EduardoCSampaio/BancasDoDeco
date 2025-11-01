@@ -79,7 +79,7 @@ export default function RoulettePage() {
                     id: doc.id,
                     twitchNick: data.twitchNick || data.name || '',
                     cpf: data.cpf,
-                    casinoId: data.casinoId || data.casinoAccountId,
+                    casinoAccountId: data.casinoAccountId || data.casinoId,
                     pixKeyType: data.pixKeyType,
                     pixKey: data.pixKey,
                     createdAt: data.createdAt?.toDate(),

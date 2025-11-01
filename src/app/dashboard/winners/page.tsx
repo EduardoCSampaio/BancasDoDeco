@@ -72,7 +72,7 @@ export default function WinnersPage() {
           id: doc.id,
           twitchNick: data.twitchNick || data.name || '',
           cpf: data.cpf,
-          casinoId: data.casinoId || data.casinoAccountId,
+          casinoAccountId: data.casinoAccountId || data.casinoId,
           pixKeyType: data.pixKeyType,
           pixKey: data.pixKey,
           createdAt: data.createdAt?.toDate(),
@@ -126,7 +126,7 @@ export default function WinnersPage() {
                     <TableRow key={winner.id}>
                       <TableCell className="font-medium">{winner.twitchNick}</TableCell>
                       <TableCell>{winner.cpf}</TableCell>
-                      <TableCell>{winner.casinoId}</TableCell>
+                      <TableCell>{winner.casinoAccountId}</TableCell>
                       <TableCell>{winner.pixKey}</TableCell>
                       <TableCell>
                         {winner.wonAt?.toLocaleString('pt-BR') || 'Data indisponível'}

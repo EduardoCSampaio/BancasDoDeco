@@ -39,7 +39,7 @@ const RegistrationSchema = z.object({
     required_error: 'Você precisa selecionar um tipo de chave Pix.',
   }),
   pixKey: z.string().optional(),
-  casinoId: z.string().min(1, { message: 'ID da Conta Cassino é obrigatório.' }),
+  casinoAccountId: z.string().min(1, { message: 'ID da Conta Cassino é obrigatório.' }),
 }).refine(data => {
     if (data.pixKeyType !== 'cpf') {
         return !!data.pixKey && data.pixKey.length > 0;
@@ -78,7 +78,7 @@ export function RegistrationForm() {
       cpf: '',
       pixKeyType: 'cpf',
       pixKey: '',
-      casinoId: '',
+      casinoAccountId: '',
     },
   });
 
@@ -119,7 +119,7 @@ export function RegistrationForm() {
       const submissionData: any = {
         twitchNick: data.twitchNick,
         cpf: data.cpf,
-        casinoId: data.casinoId,
+        casinoAccountId: data.casinoAccountId,
         pixKeyType: data.pixKeyType,
         createdAt: serverTimestamp(),
       };
@@ -253,7 +253,7 @@ export function RegistrationForm() {
 
         <FormField
           control={form.control}
-          name="casinoId"
+          name="casinoAccountId"
           render={({ field }) => (
             <FormItem>
               <FormLabel>ID da Conta Cassino</FormLabel>

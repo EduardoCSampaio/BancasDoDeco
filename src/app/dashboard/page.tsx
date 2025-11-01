@@ -45,10 +45,9 @@ export default function DashboardPage() {
         const data = doc.data();
         return {
           id: doc.id,
-          // Handle old data structure with 'name' and new with 'twitchNick'
           twitchNick: data.twitchNick || data.name || '', 
           cpf: data.cpf,
-          casinoId: data.casinoId || data.casinoAccountId,
+          casinoAccountId: data.casinoAccountId || data.casinoId,
           pixKeyType: data.pixKeyType,
           pixKey: data.pixKey,
           createdAt: data.createdAt?.toDate(), 

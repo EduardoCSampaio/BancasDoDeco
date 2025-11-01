@@ -4,7 +4,7 @@ export type User = {
   id: string;
   twitchNick: string;
   cpf: string;
-  casinoId: string;
+  casinoAccountId: string;
   pixKeyType: 'cpf' | 'email' | 'telefone' | 'aleatoria';
   pixKey: string;
   createdAt: any; // Can be Date or Timestamp
