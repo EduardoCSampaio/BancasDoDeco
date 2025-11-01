@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -27,14 +28,36 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 
 const RegistrationSchema = z.object({
-  name: z.string().min(2, { message: 'Nome deve ter pelo menos 2 caracteres.' }),
+  twitchNick: z.string().min(2, { message: 'Nick deve ter pelo menos 2 caracteres.' }),
   cpf: z.string().regex(/^\d{11}$/, {
     message: 'CPF deve conter 11 dígitos.',
   }),
+  pixKeyType: z.enum(['cpf', 'email', 'telefone', 'aleatoria'], {
+    required_error: 'Você precisa selecionar um tipo de chave Pix.',
+  }),
+  pixKey: z.string().optional(),
   casinoId: z.string().min(1, { message: 'ID da Conta Cassino é obrigatório.' }),
+}).refine(data => {
+    if (data.pixKeyType !== 'cpf') {
+        return !!data.pixKey && data.pixKey.length > 0;
+    }
+    return true;
+}, {
+    message: 'A Chave Pix é obrigatória para o tipo selecionado.',
+    path: ['pixKey'],
+}).refine(data => {
+    if (data.pixKeyType === 'email') {
+        return z.string().email({message: 'Formato de email inválido.'}).safeParse(data.pixKey).success;
+    }
+    return true;
+}, {
+    message: 'Formato de email inválido.',
+    path: ['pixKey'],
 });
+
 
 async function isCpfAlreadyRegistered(db: Firestore, cpf: string) {
   const usersCol = collection(db, 'user_registrations');
@@ -51,11 +74,15 @@ export function RegistrationForm() {
   const form = useForm<z.infer<typeof RegistrationSchema>>({
     resolver: zodResolver(RegistrationSchema),
     defaultValues: {
-      name: '',
+      twitchNick: '',
       cpf: '',
+      pixKeyType: 'cpf',
+      pixKey: '',
       casinoId: '',
     },
   });
+
+  const pixKeyType = form.watch('pixKeyType');
 
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 11);
@@ -88,10 +115,22 @@ export function RegistrationForm() {
       }
       
       const usersCol = collection(firestore, 'user_registrations');
-      await addDoc(usersCol, {
-        ...data,
+      
+      const submissionData: any = {
+        twitchNick: data.twitchNick,
+        cpf: data.cpf,
+        casinoId: data.casinoId,
+        pixKeyType: data.pixKeyType,
         createdAt: serverTimestamp(),
-      });
+      };
+
+      if (data.pixKeyType !== 'cpf') {
+        submissionData.pixKey = data.pixKey;
+      } else {
+        submissionData.pixKey = data.cpf;
+      }
+
+      await addDoc(usersCol, submissionData);
       
       toast({
         title: 'Sucesso!',
@@ -116,17 +155,18 @@ export function RegistrationForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="name"
+          name="twitchNick"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nome Completo</FormLabel>
+              <FormLabel>Nick na Twitch</FormLabel>
               <FormControl>
-                <Input placeholder="Seu nome completo" {...field} />
+                <Input placeholder="Seu nick na Twitch" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+        
         <FormField
           control={form.control}
           name="cpf"
@@ -144,6 +184,73 @@ export function RegistrationForm() {
             </FormItem>
           )}
         />
+        
+        <FormField
+          control={form.control}
+          name="pixKeyType"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>Tipo de Chave Pix</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex flex-col space-y-1"
+                >
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="cpf" />
+                    </FormControl>
+                    <FormLabel className="font-normal">CPF</FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="email" />
+                    </FormControl>
+                    <FormLabel className="font-normal">Email</FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="telefone" />
+                    </FormControl>
+                    <FormLabel className="font-normal">Telefone</FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-3 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="aleatoria" />
+                    </FormControl>
+                    <FormLabel className="font-normal">Chave Aleatória</FormLabel>
+                  </FormItem>
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {pixKeyType && pixKeyType !== 'cpf' && (
+           <FormField
+            control={form.control}
+            name="pixKey"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                    {
+                        pixKeyType === 'email' ? 'Email' :
+                        pixKeyType === 'telefone' ? 'Telefone' :
+                        'Chave Aleatória'
+                    }
+                </FormLabel>
+                <FormControl>
+                  <Input placeholder={`Sua chave ${pixKeyType}`} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+
         <FormField
           control={form.control}
           name="casinoId"

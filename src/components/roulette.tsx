@@ -108,7 +108,7 @@ export function Roulette({ participants, onNewWinner }: { participants: User[], 
                         style={{ transform: `rotate(${angle}deg)` }}
                     >
                         <span className="text-sm font-bold text-black/70 mt-4 origin-center whitespace-nowrap transform -rotate-90">
-                           {participant.name.split(' ')[0]}
+                           {participant.twitchNick.split(' ')[0]}
                         </span>
                     </div>
                 )
@@ -122,7 +122,7 @@ export function Roulette({ participants, onNewWinner }: { participants: User[], 
             <h3 className="text-sm text-muted-foreground">O Vencedor é:</h3>
             <p className="text-4xl font-bold font-headline text-primary flex items-center gap-2">
               <Crown className="w-8 h-8 text-accent" />
-              {winner.name}
+              {winner.twitchNick}
             </p>
           </div>
         )}

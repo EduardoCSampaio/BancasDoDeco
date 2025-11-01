@@ -45,9 +45,11 @@ export default function DashboardPage() {
         const data = doc.data();
         return {
           id: doc.id,
-          name: data.name,
+          twitchNick: data.twitchNick,
           cpf: data.cpf,
           casinoId: data.casinoId,
+          pixKeyType: data.pixKeyType,
+          pixKey: data.pixKey,
           createdAt: data.createdAt?.toDate(), 
         } as User;
       }).filter(u => u.createdAt);

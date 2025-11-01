@@ -1,9 +1,12 @@
 
+
 export type User = {
   id: string;
-  name: string;
+  twitchNick: string;
   cpf: string;
   casinoId: string;
+  pixKeyType: 'cpf' | 'email' | 'telefone' | 'aleatoria';
+  pixKey: string;
   createdAt: any; // Can be Date or Timestamp
 };
 

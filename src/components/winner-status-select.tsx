@@ -45,7 +45,7 @@ export function WinnerStatusSelect({ winner }: { winner: Winner }) {
         if (result.success) {
             toast({
                 title: 'Status Atualizado',
-                description: `O status de ${winner.name} foi alterado para ${newStatus}.`,
+                description: `O status de ${winner.twitchNick} foi alterado para ${newStatus}.`,
             });
         } else {
             toast({

@@ -18,7 +18,7 @@ export function UserTable({ users }: { users: User[] }) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredUsers = users.filter((user) =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.twitchNick.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.cpf.includes(searchTerm)
   );
 
@@ -27,7 +27,7 @@ export function UserTable({ users }: { users: User[] }) {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
         <Input
-          placeholder="Buscar por nome ou CPF..."
+          placeholder="Buscar por nick ou CPF..."
           className="pl-10 w-full md:w-1/3"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -37,9 +37,10 @@ export function UserTable({ users }: { users: User[] }) {
         <Table>
           <TableHeader className="sticky top-0 bg-secondary">
             <TableRow>
-              <TableHead className="font-bold">Nome</TableHead>
+              <TableHead className="font-bold">Nick na Twitch</TableHead>
               <TableHead className="font-bold">CPF</TableHead>
               <TableHead className="font-bold">ID Cassino</TableHead>
+              <TableHead className="font-bold">Chave Pix</TableHead>
               <TableHead className="font-bold text-right">Data de Cadastro</TableHead>
             </TableRow>
           </TableHeader>
@@ -47,9 +48,10 @@ export function UserTable({ users }: { users: User[] }) {
             {filteredUsers.length > 0 ? (
               filteredUsers.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableCell className="font-medium">{user.twitchNick}</TableCell>
                   <TableCell>{user.cpf}</TableCell>
                   <TableCell>{user.casinoId}</TableCell>
+                  <TableCell>{user.pixKeyType === 'cpf' ? `CPF: ${user.cpf}`: user.pixKey}</TableCell>
                   <TableCell className="text-right">
                     {user.createdAt.toLocaleDateString('pt-BR')}
                   </TableCell>
@@ -57,7 +59,7 @@ export function UserTable({ users }: { users: User[] }) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
+                <TableCell colSpan={5} className="h-24 text-center">
                   {searchTerm ? 'Nenhum resultado encontrado.' : 'Nenhum usuário cadastrado ainda.'}
                 </TableCell>
               </TableRow>

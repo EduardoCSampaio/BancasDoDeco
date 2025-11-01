@@ -30,9 +30,10 @@ function WinnersSkeleton() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Nome</TableHead>
+            <TableHead>Nick na Twitch</TableHead>
             <TableHead>CPF</TableHead>
             <TableHead>ID Cassino</TableHead>
+            <TableHead>Chave Pix</TableHead>
             <TableHead>Data do Sorteio</TableHead>
             <TableHead className="text-right">Status</TableHead>
           </TableRow>
@@ -43,6 +44,7 @@ function WinnersSkeleton() {
               <TableCell><Skeleton className="h-4 w-32" /></TableCell>
               <TableCell><Skeleton className="h-4 w-24" /></TableCell>
               <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-28" /></TableCell>
               <TableCell><Skeleton className="h-4 w-24" /></TableCell>
               <TableCell className="text-right"><Skeleton className="h-8 w-32 ml-auto" /></TableCell>
             </TableRow>
@@ -68,9 +70,11 @@ export default function WinnersPage() {
         const data = doc.data();
         return {
           id: doc.id,
-          name: data.name,
+          twitchNick: data.twitchNick,
           cpf: data.cpf,
           casinoId: data.casinoId,
+          pixKeyType: data.pixKeyType,
+          pixKey: data.pixKey,
           createdAt: data.createdAt?.toDate(),
           wonAt: data.wonAt?.toDate(),
           status: data.status || 'Pendente',
@@ -108,9 +112,10 @@ export default function WinnersPage() {
             <Table>
               <TableHeader className="sticky top-0 bg-secondary">
                 <TableRow>
-                  <TableHead className="font-bold">Nome</TableHead>
+                  <TableHead className="font-bold">Nick na Twitch</TableHead>
                   <TableHead className="font-bold">CPF</TableHead>
                   <TableHead className="font-bold">ID Cassino</TableHead>
+                  <TableHead className="font-bold">Chave Pix</TableHead>
                   <TableHead className="font-bold">Data do Sorteio</TableHead>
                   <TableHead className="font-bold text-right">Status</TableHead>
                 </TableRow>
@@ -119,9 +124,10 @@ export default function WinnersPage() {
                 {winners.length > 0 ? (
                   winners.map((winner) => (
                     <TableRow key={winner.id}>
-                      <TableCell className="font-medium">{winner.name}</TableCell>
+                      <TableCell className="font-medium">{winner.twitchNick}</TableCell>
                       <TableCell>{winner.cpf}</TableCell>
                       <TableCell>{winner.casinoId}</TableCell>
+                      <TableCell>{winner.pixKey}</TableCell>
                       <TableCell>
                         {winner.wonAt?.toLocaleString('pt-BR') || 'Data indisponível'}
                       </TableCell>
@@ -132,7 +138,7 @@ export default function WinnersPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={6} className="h-24 text-center">
                       Nenhum ganhador registrado ainda.
                     </TableCell>
                   </TableRow>

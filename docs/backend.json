@@ -9,9 +9,9 @@
           "type": "string",
           "description": "Unique identifier for the user registration entry."
         },
-        "name": {
+        "twitchNick": {
           "type": "string",
-          "description": "The user's full name."
+          "description": "The user's Twitch username."
         },
         "cpf": {
           "type": "string",
@@ -20,13 +20,24 @@
         "casinoAccountId": {
           "type": "string",
           "description": "The user's ID for their casino account."
+        },
+        "pixKeyType": {
+          "type": "string",
+          "description": "The type of Pix key provided by the user.",
+          "enum": ["cpf", "email", "telefone", "aleatoria"]
+        },
+        "pixKey": {
+            "type": "string",
+            "description": "The user's Pix key value."
         }
       },
       "required": [
         "id",
-        "name",
+        "twitchNick",
         "cpf",
-        "casinoAccountId"
+        "casinoAccountId",
+        "pixKeyType",
+        "pixKey"
       ]
     },
     "UserProfile": {
