@@ -17,11 +17,11 @@ service cloud.firestore {
 
     // Rules for the user registrations collection
     match /user_registrations/{registrationId} {
-      // Allow creation by anyone (public registration form)
-      allow create: if true;
+      // Allow creation and read by anyone (public registration form needs read for CPF check)
+      allow create, read: if true;
       
-      // Only admins can read, update, or delete user registrations
-      allow read, update, delete: if isAdmin();
+      // Only admins can update, or delete user registrations
+      allow update, delete: if isAdmin();
     }
     
     // Admins can list all registered users
