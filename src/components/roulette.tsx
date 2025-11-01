@@ -104,7 +104,7 @@ export function Roulette({ participants, onNewWinner }: { participants: User[], 
                 return (
                     <div
                         key={index}
-                        className="absolute w-full h-full flex justify-center"
+                        className="absolute w-full h-full flex justify-center items-start origin-center"
                         style={{ transform: `rotate(${angle}deg)` }}
                     >
                         <span className="text-sm font-bold text-black/70 mt-4 origin-center whitespace-nowrap transform -rotate-90">
