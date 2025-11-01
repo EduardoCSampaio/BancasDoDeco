@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -64,11 +65,19 @@ export default function RoulettePage() {
         const usersCol = collection(firestore, 'user_registrations');
         const usersQuery = query(usersCol);
         const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
-            const usersData = snapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-                createdAt: doc.data().createdAt?.toDate(),
-            } as User)).filter(u => u.createdAt);
+            const usersData = snapshot.docs.map((doc) => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    // Handle old data structure with 'name' and new with 'twitchNick'
+                    twitchNick: data.twitchNick || data.name || '',
+                    cpf: data.cpf,
+                    casinoId: data.casinoId || data.casinoAccountId,
+                    pixKeyType: data.pixKeyType,
+                    pixKey: data.pixKey,
+                    createdAt: data.createdAt?.toDate(),
+                } as User
+            }).filter(u => u.createdAt);
             
             usersData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
             setUsers(usersData);

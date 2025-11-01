@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { User } from '@/lib/definitions';
@@ -18,8 +19,8 @@ export function UserTable({ users }: { users: User[] }) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredUsers = users.filter((user) =>
-    user.twitchNick.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.cpf.includes(searchTerm)
+    (user.twitchNick?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (user.cpf || '').includes(searchTerm)
   );
 
   return (

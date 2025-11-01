@@ -70,9 +70,9 @@ export default function WinnersPage() {
         const data = doc.data();
         return {
           id: doc.id,
-          twitchNick: data.twitchNick,
+          twitchNick: data.twitchNick || data.name || '',
           cpf: data.cpf,
-          casinoId: data.casinoId,
+          casinoId: data.casinoId || data.casinoAccountId,
           pixKeyType: data.pixKeyType,
           pixKey: data.pixKey,
           createdAt: data.createdAt?.toDate(),
